@@ -5,6 +5,11 @@ import Capacitor
 @objc(MainViewController)
 class MainViewController: CAPBridgeViewController {
 
+    override var preferredStatusBarStyle: UIStatusBarStyle {
+        // Crisp white status bar icons next to the Dynamic Island on dark theme
+        return .lightContent
+    }
+
     override func webViewConfiguration(for instanceConfiguration: InstanceConfiguration) -> WKWebViewConfiguration {
         let config = super.webViewConfiguration(for: instanceConfiguration)
 
@@ -35,6 +40,8 @@ class MainViewController: CAPBridgeViewController {
         super.viewDidLoad()
         // Enable iOS native swipe navigation (swipe left/right to navigate history)
         webView?.allowsBackForwardNavigationGestures = true
+        // Allow CSS env(safe-area-inset-*) to manage Dynamic Island & Notch cleanly
+        webView?.scrollView.contentInsetAdjustmentBehavior = .never
     }
 }
 
@@ -44,7 +51,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
         return true
     }
 

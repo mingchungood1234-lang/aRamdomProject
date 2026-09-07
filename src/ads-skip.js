@@ -1,6 +1,7 @@
 /**
  * YouTube AdFree - Automated Ad Skipping, Banner Blocker & Responsive Engine
  * Designed for m.youtube.com within Capacitor WebView
+ * Enhanced for iPhone 14 Pro / 15 / 16 Dynamic Island & Edge-to-Edge Displays
  */
 (function () {
   'use strict';
@@ -11,7 +12,7 @@
   }
   window.__yt_adfree_injected__ = true;
 
-  console.log('[YT-AdFree] Initializing Ad-Skip & Responsive Engine...');
+  console.log('[YT-AdFree] Initializing Ad-Skip & Dynamic Island Engine...');
 
   // 1. Ensure Responsive Viewport with viewport-fit=cover
   function ensureResponsiveViewport() {
@@ -49,7 +50,7 @@
     '.ad-showing .ytp-ad-text'
   ].join(',\n');
 
-  // 3. Inject Styles: Ad Blocking + Native Responsive Layout & Safe Areas
+  // 3. Inject Styles: Ad Shield + iPhone 14 Pro Dynamic Island & Responsive Layout
   function injectStyles() {
     if (document.getElementById('yt-adfree-styles')) return;
 
@@ -79,44 +80,96 @@
       }
 
       /* ============================================================ */
-      /* 3. SAFE AREA INSETS (Notch, Dynamic Island, Home Bar)        */
+      /* 3. DYNAMIC ISLAND (iPhone 14 Pro/15/16) & NOTCH INSETS       */
       /* ============================================================ */
-      /* Top App Bar / Header: Pad down for Notch / Dynamic Island */
+
+      /* Top Header: Expand height and pad content below Dynamic Island (~54px) */
       header,
       ytm-mobile-topbar-renderer,
       #header-bar,
       .mobile-topbar-header {
+        height: calc(48px + env(safe-area-inset-top, 0px)) !important;
         padding-top: env(safe-area-inset-top, 0px) !important;
+        box-sizing: border-box !important;
         background-color: #0f0f0f !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 9999 !important;
+      }
+
+      /* Feed Container: Push content down so it starts cleanly under the Dynamic Island header */
+      ytm-app,
+      #app,
+      .page-container,
+      ytm-browse,
+      ytm-single-column-browse-results-renderer {
+        padding-top: calc(48px + env(safe-area-inset-top, 0px)) !important;
+        padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px)) !important;
+        box-sizing: border-box !important;
       }
 
       /* Bottom Navigation / Pivot Bar: Pad up for Home Indicator Bar */
       ytm-pivot-bar-renderer,
       .pivot-bar,
       .mobile-bottom-navigation {
+        height: calc(48px + env(safe-area-inset-bottom, 0px)) !important;
         padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+        box-sizing: border-box !important;
+        background-color: #0f0f0f !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 9998 !important;
+      }
+
+      /* Watch Page (/watch): Ensure player isn't cut off by the Dynamic Island in portrait */
+      ytm-watch {
+        padding-top: env(safe-area-inset-top, 0px) !important;
+        box-sizing: border-box !important;
+      }
+
+      /* Search header input bar alignment */
+      ytm-search-header-renderer {
+        padding-top: env(safe-area-inset-top, 0px) !important;
         background-color: #0f0f0f !important;
       }
 
-      /* Main container padding for bottom bar space */
-      ytm-app,
-      #app,
-      .page-container {
-        padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px)) !important;
+      /* Dialogs & Bottom Sheets: Stay above home bar and below Dynamic Island */
+      ytm-bottom-sheet-renderer,
+      ytm-engagement-panel-section-list-renderer,
+      .dialog-container {
+        padding-top: env(safe-area-inset-top, 0px) !important;
+        padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+        box-sizing: border-box !important;
       }
 
-      /* Landscape Edge Safety (Notch on left or right) */
+      /* ============================================================ */
+      /* 4. LANDSCAPE MODE ON DYNAMIC ISLAND                          */
+      /* ============================================================ */
       @media screen and (orientation: landscape) {
         body {
           padding-left: env(safe-area-inset-left, 0px) !important;
           padding-right: env(safe-area-inset-right, 0px) !important;
         }
+
+        /* Keep video player controls padded away from the pill on the side */
+        .ytp-chrome-bottom,
+        .ytp-chrome-top,
+        .ytm-custom-control,
+        .player-controls-bottom {
+          padding-left: calc(14px + env(safe-area-inset-left, 0px)) !important;
+          padding-right: calc(14px + env(safe-area-inset-right, 0px)) !important;
+          box-sizing: border-box !important;
+        }
       }
 
       /* ============================================================ */
-      /* 4. FULLSCREEN VIDEO OPTIMIZATION                            */
+      /* 5. FULLSCREEN VIDEO IMMERSION                                */
       /* ============================================================ */
-      /* Fullscreen video should bypass safe areas and fill 100% edge-to-edge */
+      /* In fullscreen, clear safe areas so video naturally centers edge-to-edge */
       :fullscreen,
       :-webkit-full-screen,
       [fullscreen="true"],
@@ -131,10 +184,9 @@
       }
 
       /* ============================================================ */
-      /* 5. TABLET / iPAD RESPONSIVE GRID LAYOUT (>= 600px)           */
+      /* 6. TABLET / iPAD MULTI-COLUMN GRID (>= 600px)                */
       /* ============================================================ */
       @media screen and (min-width: 600px) {
-        /* Turn single-column stretched feeds into modern multi-column grid */
         ytm-rich-grid-renderer .rich-grid-renderer-contents,
         ytm-item-section-renderer .item-section-renderer-contents,
         .media-item-list {
@@ -145,7 +197,6 @@
           box-sizing: border-box !important;
         }
 
-        /* Card container adjustments inside grid */
         ytm-rich-item-renderer,
         ytm-video-with-context-renderer,
         ytm-compact-video-renderer {
@@ -155,7 +206,6 @@
           flex-direction: column !important;
         }
 
-        /* Thumbnail rounded corners and aspect ratio */
         ytm-media-item .media-item-thumbnail-container,
         .video-thumbnail-container-compact {
           aspect-ratio: 16 / 9 !important;
@@ -164,7 +214,6 @@
           overflow: hidden !important;
         }
 
-        /* Video Player on Tablet in Portrait */
         #player-container-id,
         .player-container {
           max-height: 52vh !important;
@@ -353,5 +402,5 @@
   setInterval(attachVideoListeners, 1000);
   attachVideoListeners();
 
-  console.log('[YT-AdFree] Ad-Skip & Responsive Engine active.');
+  console.log('[YT-AdFree] Ad-Skip & Dynamic Island Engine active.');
 })();
