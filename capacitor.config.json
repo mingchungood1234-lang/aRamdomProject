@@ -1,0 +1,26 @@
+{
+  "appId": "com.ytadfree.app",
+  "appName": "YouTube AdFree",
+  "webDir": "www",
+  "server": {
+    "url": "https://m.youtube.com",
+    "cleartext": false,
+    "allowNavigation": [
+      "m.youtube.com",
+      "*.youtube.com",
+      "*.googlevideo.com",
+      "*.google.com",
+      "accounts.google.com"
+    ]
+  },
+  "ios": {
+    "allowsLinkPreview": false,
+    "handleApplicationNotifications": false,
+    "limitsNavigationsToAppBoundDomains": false
+  },
+  "android": {
+    "allowMixedContent": true,
+    "webContentsDebuggingEnabled": true
+  }
+}
+
