@@ -16,11 +16,12 @@
   "ios": {
     "allowsLinkPreview": false,
     "handleApplicationNotifications": false,
-    "limitsNavigationsToAppBoundDomains": false
+    "limitsNavigationsToAppBoundDomains": false,
+    "contentInsetAdjustmentBehavior": "never",
+    "preferredContentMode": "mobile"
   },
   "android": {
     "allowMixedContent": true,
     "webContentsDebuggingEnabled": true
   }
 }
-

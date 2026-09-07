@@ -1,5 +1,5 @@
 /**
- * YouTube AdFree - Automated Ad Skipping & Ad Blocking Script
+ * YouTube AdFree - Automated Ad Skipping, Banner Blocker & Responsive Engine
  * Designed for m.youtube.com within Capacitor WebView
  */
 (function () {
@@ -11,9 +11,24 @@
   }
   window.__yt_adfree_injected__ = true;
 
-  console.log('[YT-AdFree] Initializing Ad-Skip & Banner Blocker...');
+  console.log('[YT-AdFree] Initializing Ad-Skip & Responsive Engine...');
 
-  // 1. Inject CSS to hide banners, promoted cards, and ad overlays
+  // 1. Ensure Responsive Viewport with viewport-fit=cover
+  function ensureResponsiveViewport() {
+    let meta = document.querySelector('meta[name="viewport"]');
+    const targetContent =
+      'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.name = 'viewport';
+      meta.content = targetContent;
+      (document.head || document.documentElement).appendChild(meta);
+    } else if (!meta.content.includes('viewport-fit=cover')) {
+      meta.content = targetContent;
+    }
+  }
+
+  // 2. CSS Selectors for Ad Elements
   const AD_SELECTORS_CSS = [
     'ytm-promoted-sparkles-web-renderer',
     'ytm-promoted-video-renderer',
@@ -34,18 +49,138 @@
     '.ad-showing .ytp-ad-text'
   ].join(',\n');
 
+  // 3. Inject Styles: Ad Blocking + Native Responsive Layout & Safe Areas
   function injectStyles() {
     if (document.getElementById('yt-adfree-styles')) return;
 
     const style = document.createElement('style');
     style.id = 'yt-adfree-styles';
     style.textContent = `
+      /* ============================================================ */
+      /* 1. AD BLOCKING RULES                                         */
+      /* ============================================================ */
       ${AD_SELECTORS_CSS} {
         display: none !important;
         opacity: 0 !important;
         pointer-events: none !important;
         height: 0 !important;
         min-height: 0 !important;
+      }
+
+      /* ============================================================ */
+      /* 2. BASE RESPONSIVE & DARK THEME SETUP                        */
+      /* ============================================================ */
+      html, body {
+        background-color: #0f0f0f !important;
+        color: #ffffff !important;
+        -webkit-tap-highlight-color: transparent !important;
+        overscroll-behavior-y: contain !important;
+        -webkit-overflow-scrolling: touch !important;
+      }
+
+      /* ============================================================ */
+      /* 3. SAFE AREA INSETS (Notch, Dynamic Island, Home Bar)        */
+      /* ============================================================ */
+      /* Top App Bar / Header: Pad down for Notch / Dynamic Island */
+      header,
+      ytm-mobile-topbar-renderer,
+      #header-bar,
+      .mobile-topbar-header {
+        padding-top: env(safe-area-inset-top, 0px) !important;
+        background-color: #0f0f0f !important;
+      }
+
+      /* Bottom Navigation / Pivot Bar: Pad up for Home Indicator Bar */
+      ytm-pivot-bar-renderer,
+      .pivot-bar,
+      .mobile-bottom-navigation {
+        padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+        background-color: #0f0f0f !important;
+      }
+
+      /* Main container padding for bottom bar space */
+      ytm-app,
+      #app,
+      .page-container {
+        padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px)) !important;
+      }
+
+      /* Landscape Edge Safety (Notch on left or right) */
+      @media screen and (orientation: landscape) {
+        body {
+          padding-left: env(safe-area-inset-left, 0px) !important;
+          padding-right: env(safe-area-inset-right, 0px) !important;
+        }
+      }
+
+      /* ============================================================ */
+      /* 4. FULLSCREEN VIDEO OPTIMIZATION                            */
+      /* ============================================================ */
+      /* Fullscreen video should bypass safe areas and fill 100% edge-to-edge */
+      :fullscreen,
+      :-webkit-full-screen,
+      [fullscreen="true"],
+      .fullscreen,
+      .player-fullscreen {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: 100vw !important;
+        max-height: 100vh !important;
+      }
+
+      /* ============================================================ */
+      /* 5. TABLET / iPAD RESPONSIVE GRID LAYOUT (>= 600px)           */
+      /* ============================================================ */
+      @media screen and (min-width: 600px) {
+        /* Turn single-column stretched feeds into modern multi-column grid */
+        ytm-rich-grid-renderer .rich-grid-renderer-contents,
+        ytm-item-section-renderer .item-section-renderer-contents,
+        .media-item-list {
+          display: grid !important;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+          gap: 16px !important;
+          padding: 16px !important;
+          box-sizing: border-box !important;
+        }
+
+        /* Card container adjustments inside grid */
+        ytm-rich-item-renderer,
+        ytm-video-with-context-renderer,
+        ytm-compact-video-renderer {
+          margin: 0 !important;
+          width: 100% !important;
+          display: flex !important;
+          flex-direction: column !important;
+        }
+
+        /* Thumbnail rounded corners and aspect ratio */
+        ytm-media-item .media-item-thumbnail-container,
+        .video-thumbnail-container-compact {
+          aspect-ratio: 16 / 9 !important;
+          width: 100% !important;
+          border-radius: 12px !important;
+          overflow: hidden !important;
+        }
+
+        /* Video Player on Tablet in Portrait */
+        #player-container-id,
+        .player-container {
+          max-height: 52vh !important;
+          background: #000000 !important;
+        }
+      }
+
+      /* Large Tablets & Desktop Widths (>= 1024px) */
+      @media screen and (min-width: 1024px) {
+        ytm-rich-grid-renderer .rich-grid-renderer-contents,
+        ytm-item-section-renderer .item-section-renderer-contents {
+          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+          gap: 20px !important;
+          max-width: 1440px !important;
+          margin: 0 auto !important;
+        }
       }
     `;
 
@@ -55,7 +190,7 @@
     }
   }
 
-  // 2. Simulated Click Helper (bypasses synthetic check)
+  // 4. Simulated Click Helper (bypasses synthetic check)
   function triggerClick(element) {
     if (!element) return;
     try {
@@ -76,7 +211,7 @@
     );
   }
 
-  // 3. Skip Button Selectors
+  // 5. Skip Button Selectors
   const SKIP_BUTTON_SELECTORS = [
     '.ytp-ad-skip-button',
     '.ytp-ad-skip-button-modern',
@@ -89,7 +224,7 @@
     'button[class*="skip-button"]'
   ];
 
-  // 4. Video Ad Bypass Logic
+  // 6. Video Ad Bypass Logic
   function handleVideoAds() {
     const player =
       document.querySelector('#movie_player') ||
@@ -150,7 +285,7 @@
     }
   }
 
-  // 5. Dismiss Upsell Popups / App Prompts
+  // 7. Dismiss Upsell Popups / App Prompts
   function dismissPopups() {
     const dismissSelectors = [
       'ytm-mealbar-promo-renderer button[aria-label*="dismiss" i]',
@@ -167,8 +302,9 @@
     });
   }
 
-  // 6. Main cycle
+  // 8. Main cycle
   function runCheck() {
+    ensureResponsiveViewport();
     injectStyles();
     handleVideoAds();
     dismissPopups();
@@ -177,7 +313,7 @@
   // Initial execution
   runCheck();
 
-  // 7. Observer & Timers for SPA & Dynamic Ad Injections
+  // 9. Observer & Timers for SPA & Dynamic Ad Injections
   const observer = new MutationObserver(() => {
     runCheck();
   });
@@ -196,10 +332,12 @@
   // Polling interval (250ms) for high responsiveness
   setInterval(runCheck, 250);
 
-  // Hook navigation events on YouTube's SPA
+  // Hook navigation & orientation events
   window.addEventListener('yt-navigate-finish', runCheck);
   window.addEventListener('yt-page-data-updated', runCheck);
   window.addEventListener('popstate', runCheck);
+  window.addEventListener('resize', runCheck);
+  window.addEventListener('orientationchange', runCheck);
 
   // Hook video element events when available
   function attachVideoListeners() {
@@ -215,5 +353,5 @@
   setInterval(attachVideoListeners, 1000);
   attachVideoListeners();
 
-  console.log('[YT-AdFree] Ad-Skip & Banner Blocker active.');
+  console.log('[YT-AdFree] Ad-Skip & Responsive Engine active.');
 })();
