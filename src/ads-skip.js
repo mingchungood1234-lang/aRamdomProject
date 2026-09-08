@@ -110,16 +110,16 @@
         -webkit-overflow-scrolling: touch !important;
       }
 
-      /* --- DYNAMIC ISLAND (iPhone 14 Pro/15/16) & NOTCH CLEARANCE --- */
-      /* Top Header: Generous space so search and icons sit cleanly below Dynamic Island */
+      /* --- DYNAMIC ISLAND & NOTCH CLEARANCE (NON-COMPOUNDING) --- */
+      /* Top Header: Fits Dynamic Island & status bar cleanly */
       header,
       ytm-mobile-topbar-renderer,
       #header-bar,
       .mobile-topbar-header {
-        height: calc(58px + env(safe-area-inset-top, 0px)) !important;
-        padding-top: calc(env(safe-area-inset-top, 0px) + 16px) !important;
-        padding-left: 12px !important;
-        padding-right: 12px !important;
+        height: calc(48px + env(safe-area-inset-top, 0px)) !important;
+        padding-top: env(safe-area-inset-top, 0px) !important;
+        padding-left: 10px !important;
+        padding-right: 10px !important;
         box-sizing: border-box !important;
         background-color: #0f0f0f !important;
         position: fixed !important;
@@ -129,19 +129,19 @@
         z-index: 9999 !important;
       }
 
-      /* Search & Topbar Buttons: Comfortable touch area */
+      /* Search & Topbar Buttons: Clean vertical centering inside 48px bar */
       ytm-mobile-topbar-renderer .mobile-topbar-header-content,
       .mobile-topbar-header-content {
         display: flex !important;
         align-items: center !important;
-        height: 100% !important;
+        height: 48px !important;
       }
 
       button[aria-label*="Search" i],
       .topbar-menu-button,
       ytm-searchbox {
-        min-width: 48px !important;
-        min-height: 48px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -150,21 +150,27 @@
 
       /* Search Input Header Page (Active Search) */
       ytm-search-header-renderer {
-        height: calc(58px + env(safe-area-inset-top, 0px)) !important;
-        padding-top: calc(env(safe-area-inset-top, 0px) + 16px) !important;
+        height: calc(48px + env(safe-area-inset-top, 0px)) !important;
+        padding-top: env(safe-area-inset-top, 0px) !important;
         box-sizing: border-box !important;
         background-color: #0f0f0f !important;
       }
 
-      /* Main Page Body: Push down to prevent top content being clipped under header */
-      ytm-app,
-      #app,
+      /* Main Page Body: Push down ONCE on the root app container only */
+      body > ytm-app,
+      #app {
+        padding-top: calc(48px + env(safe-area-inset-top, 0px)) !important;
+        padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px)) !important;
+        box-sizing: border-box !important;
+      }
+
+      /* Explicitly zero out nested children so padding never compounds/multiplies */
       .page-container,
       ytm-browse,
-      ytm-single-column-browse-results-renderer {
-        padding-top: calc(58px + env(safe-area-inset-top, 0px)) !important;
-        padding-bottom: calc(54px + env(safe-area-inset-bottom, 0px)) !important;
-        box-sizing: border-box !important;
+      ytm-single-column-browse-results-renderer,
+      ytm-rich-grid-renderer {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
       }
 
       /* Bottom Navigation / Pivot Bar */
@@ -184,7 +190,8 @@
 
       /* Watch Page (/watch): Player positioning */
       ytm-watch {
-        padding-top: calc(env(safe-area-inset-top, 0px) + 6px) !important;
+        padding-top: 0 !important;
+        margin-top: 0 !important;
         box-sizing: border-box !important;
       }
 
@@ -192,7 +199,7 @@
       ytm-bottom-sheet-renderer,
       ytm-engagement-panel-section-list-renderer,
       .dialog-container {
-        padding-top: calc(env(safe-area-inset-top, 0px) + 16px) !important;
+        padding-top: env(safe-area-inset-top, 0px) !important;
         padding-bottom: env(safe-area-inset-bottom, 0px) !important;
         box-sizing: border-box !important;
       }
