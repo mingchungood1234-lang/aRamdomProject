@@ -1,6 +1,7 @@
 /**
  * YouTube AdFree - Automated Ad Skipping, Banner Blocker & Responsive Engine
  * Designed for m.youtube.com within Capacitor WebView
+ * Enhanced for iPhone 14 Pro / 15 / 16 Dynamic Island & Edge-to-Edge Displays
  * Enhanced for iPhone 14 Pro / 15 / 16 Dynamic Island, Generous Top Spacing & Bottom-Right Go Back Button
  */
 (function () {
@@ -12,6 +13,7 @@
   }
   window.__yt_adfree_injected__ = true;
 
+  console.log('[YT-AdFree] Initializing Ad-Skip & Dynamic Island Engine...');
   console.log('[YT-AdFree] Initializing Ad-Skip, Search Spacing & Go Back Engine...');
 
   // 1. Ensure Responsive Viewport with viewport-fit=cover
@@ -50,6 +52,7 @@
     '.ad-showing .ytp-ad-text'
   ].join(',\n');
 
+  // 3. Inject Styles: Ad Shield + iPhone 14 Pro Dynamic Island & Responsive Layout
   // 3. Inject Styles: Ad Shield + Dynamic Island Top Spacing + Bottom-Right Back Button
   function injectStyles() {
     if (document.getElementById('yt-adfree-styles')) return;
@@ -80,14 +83,18 @@
       }
 
       /* ============================================================ */
+      /* 3. DYNAMIC ISLAND (iPhone 14 Pro/15/16) & NOTCH INSETS       */
       /* 3. DYNAMIC ISLAND & SEARCH BAR TOP SPACING                   */
       /* ============================================================ */
 
+      /* Top Header: Expand height and pad content below Dynamic Island (~54px) */
       /* Top Header: Generous padding-top to give breathing room for Search Icon below Dynamic Island */
       header,
       ytm-mobile-topbar-renderer,
       #header-bar,
       .mobile-topbar-header {
+        height: calc(48px + env(safe-area-inset-top, 0px)) !important;
+        padding-top: env(safe-area-inset-top, 0px) !important;
         height: calc(56px + env(safe-area-inset-top, 0px)) !important;
         padding-top: calc(env(safe-area-inset-top, 0px) + 14px) !important;
         padding-left: 12px !important;
@@ -101,6 +108,7 @@
         z-index: 9999 !important;
       }
 
+      /* Feed Container: Push content down so it starts cleanly under the Dynamic Island header */
       /* Ensure Search button and Topbar icons have comfortable touch targets */
       ytm-mobile-topbar-renderer .mobile-topbar-header-content,
       .mobile-topbar-header-content {
@@ -134,11 +142,14 @@
       .page-container,
       ytm-browse,
       ytm-single-column-browse-results-renderer {
+        padding-top: calc(48px + env(safe-area-inset-top, 0px)) !important;
+        padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px)) !important;
         padding-top: calc(56px + env(safe-area-inset-top, 0px)) !important;
         padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
         box-sizing: border-box !important;
       }
 
+      /* Bottom Navigation / Pivot Bar: Pad up for Home Indicator Bar */
       /* Bottom Navigation / Pivot Bar */
       ytm-pivot-bar-renderer,
       .pivot-bar,
@@ -156,20 +167,29 @@
 
       /* Watch Page (/watch): Ensure player isn't cut off by the Dynamic Island in portrait */
       ytm-watch {
+        padding-top: env(safe-area-inset-top, 0px) !important;
         padding-top: calc(env(safe-area-inset-top, 0px) + 4px) !important;
         box-sizing: border-box !important;
+      }
+
+      /* Search header input bar alignment */
+      ytm-search-header-renderer {
+        padding-top: env(safe-area-inset-top, 0px) !important;
+        background-color: #0f0f0f !important;
       }
 
       /* Dialogs & Bottom Sheets: Stay above home bar and below Dynamic Island */
       ytm-bottom-sheet-renderer,
       ytm-engagement-panel-section-list-renderer,
       .dialog-container {
+        padding-top: env(safe-area-inset-top, 0px) !important;
         padding-top: calc(env(safe-area-inset-top, 0px) + 14px) !important;
         padding-bottom: env(safe-area-inset-bottom, 0px) !important;
         box-sizing: border-box !important;
       }
 
       /* ============================================================ */
+      /* 4. LANDSCAPE MODE ON DYNAMIC ISLAND                          */
       /* 4. FLOATING GO BACK BUTTON (BOTTOM RIGHT CORNER)             */
       /* ============================================================ */
       #yt-adfree-back-btn {
@@ -248,8 +268,10 @@
       }
 
       /* ============================================================ */
+      /* 5. FULLSCREEN VIDEO IMMERSION                                */
       /* 6. FULLSCREEN VIDEO IMMERSION                                */
       /* ============================================================ */
+      /* In fullscreen, clear safe areas so video naturally centers edge-to-edge */
       :fullscreen,
       :-webkit-full-screen,
       [fullscreen="true"],
@@ -264,6 +286,7 @@
       }
 
       /* ============================================================ */
+      /* 6. TABLET / iPAD MULTI-COLUMN GRID (>= 600px)                */
       /* 7. TABLET / iPAD MULTI-COLUMN GRID (>= 600px)                */
       /* ============================================================ */
       @media screen and (min-width: 600px) {
@@ -319,6 +342,7 @@
     }
   }
 
+  // 4. Simulated Click Helper (bypasses synthetic check)
   // 4. Ensure Bottom-Right Floating Go Back Button
   function ensureBackButton() {
     if (document.getElementById('yt-adfree-back-btn')) return;
@@ -384,6 +408,7 @@
     );
   }
 
+  // 5. Skip Button Selectors
   // 6. Skip Button Selectors
   const SKIP_BUTTON_SELECTORS = [
     '.ytp-ad-skip-button',
@@ -397,6 +422,7 @@
     'button[class*="skip-button"]'
   ];
 
+  // 6. Video Ad Bypass Logic
   // 7. Video Ad Bypass Logic
   function handleVideoAds() {
     const player =
@@ -458,6 +484,7 @@
     }
   }
 
+  // 7. Dismiss Upsell Popups / App Prompts
   // 8. Dismiss Upsell Popups / App Prompts
   function dismissPopups() {
     const dismissSelectors = [
@@ -475,6 +502,7 @@
     });
   }
 
+  // 8. Main cycle
   // 9. Main cycle
   function runCheck() {
     ensureResponsiveViewport();
@@ -487,6 +515,7 @@
   // Initial execution
   runCheck();
 
+  // 9. Observer & Timers for SPA & Dynamic Ad Injections
   // 10. Observer & Timers for SPA & Dynamic Ad Injections
   const observer = new MutationObserver(() => {
     runCheck();
@@ -527,5 +556,6 @@
   setInterval(attachVideoListeners, 1000);
   attachVideoListeners();
 
+  console.log('[YT-AdFree] Ad-Skip & Dynamic Island Engine active.');
   console.log('[YT-AdFree] Ad-Skip, Search Spacing & Go Back Engine active.');
 })();
