@@ -1,20 +1,46 @@
 /**
- * YouTube AdFree - Automated Ad Skipping, Banner Blocker & Responsive Engine
+ * YouTube AdFree - Automated Ad Skipping, Background Playback, Dynamic Island & Daily Use UX Engine
  * Designed for m.youtube.com within Capacitor WebView
- * Enhanced for iPhone 14 Pro / 15 / 16 Dynamic Island, Generous Top Spacing & Bottom-Right Go Back Button
  */
 (function () {
   'use strict';
 
-  if (window.__yt_adfree_injected__) {
-    console.log('[YT-AdFree] Script already initialized.');
-    return;
-  }
+  // Prevent duplicate execution of event listeners while allowing style/DOM updates
+  const isFirstRun = !window.__yt_adfree_injected__;
   window.__yt_adfree_injected__ = true;
 
-  console.log('[YT-AdFree] Initializing Ad-Skip, Search Spacing & Go Back Engine...');
+  if (isFirstRun) {
+    console.log('[YT-AdFree] Initializing Daily Use & Ad-Skip Engine...');
+  }
 
-  // 1. Ensure Responsive Viewport with viewport-fit=cover
+  // =========================================================================
+  // 1. BACKGROUND AUDIO PLAYBACK (Prevents YouTube pausing when minimized/locked)
+  // =========================================================================
+  try {
+    Object.defineProperty(document, 'hidden', {
+      get: function () {
+        return false;
+      },
+      configurable: true
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      get: function () {
+        return 'visible';
+      },
+      configurable: true
+    });
+    window.addEventListener(
+      'visibilitychange',
+      function (e) {
+        e.stopImmediatePropagation();
+      },
+      true
+    );
+  } catch (err) {}
+
+  // =========================================================================
+  // 2. VIEWPORT CONFIGURATION (Edge-to-Edge with viewport-fit=cover)
+  // =========================================================================
   function ensureResponsiveViewport() {
     let meta = document.querySelector('meta[name="viewport"]');
     const targetContent =
@@ -29,7 +55,9 @@
     }
   }
 
-  // 2. CSS Selectors for Ad Elements
+  // =========================================================================
+  // 3. STYLESHEET INJECTION (Ad Block, Dynamic Island, Clean Daily UI)
+  // =========================================================================
   const AD_SELECTORS_CSS = [
     'ytm-promoted-sparkles-web-renderer',
     'ytm-promoted-video-renderer',
@@ -47,30 +75,33 @@
     '.sparkles-light-cta',
     'ytm-paid-content-overlay-renderer',
     '#player-ads',
-    '.ad-showing .ytp-ad-text'
+    '.ad-showing .ytp-ad-text',
+    'ytm-app-banner',
+    '.app-banner',
+    'ytm-upsell-dialog-renderer'
   ].join(',\n');
 
-  // 3. Inject Styles: Ad Shield + Dynamic Island Top Spacing + Bottom-Right Back Button
   function injectStyles() {
-    if (document.getElementById('yt-adfree-styles')) return;
+    let style = document.getElementById('yt-adfree-styles');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'yt-adfree-styles';
+      (document.head || document.documentElement).appendChild(style);
+    }
 
-    const style = document.createElement('style');
-    style.id = 'yt-adfree-styles';
     style.textContent = `
-      /* ============================================================ */
-      /* 1. AD BLOCKING RULES                                         */
-      /* ============================================================ */
+      /* --- AD BLOCKING & CLUTTER REMOVAL --- */
       ${AD_SELECTORS_CSS} {
         display: none !important;
         opacity: 0 !important;
         pointer-events: none !important;
         height: 0 !important;
         min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
       }
 
-      /* ============================================================ */
-      /* 2. BASE RESPONSIVE & DARK THEME SETUP                        */
-      /* ============================================================ */
+      /* --- GLOBAL BASE SETUP --- */
       html, body {
         background-color: #0f0f0f !important;
         color: #ffffff !important;
@@ -79,17 +110,14 @@
         -webkit-overflow-scrolling: touch !important;
       }
 
-      /* ============================================================ */
-      /* 3. DYNAMIC ISLAND & SEARCH BAR TOP SPACING                   */
-      /* ============================================================ */
-
-      /* Top Header: Generous padding-top to give breathing room for Search Icon below Dynamic Island */
+      /* --- DYNAMIC ISLAND (iPhone 14 Pro/15/16) & NOTCH CLEARANCE --- */
+      /* Top Header: Generous space so search and icons sit cleanly below Dynamic Island */
       header,
       ytm-mobile-topbar-renderer,
       #header-bar,
       .mobile-topbar-header {
-        height: calc(56px + env(safe-area-inset-top, 0px)) !important;
-        padding-top: calc(env(safe-area-inset-top, 0px) + 14px) !important;
+        height: calc(58px + env(safe-area-inset-top, 0px)) !important;
+        padding-top: calc(env(safe-area-inset-top, 0px) + 16px) !important;
         padding-left: 12px !important;
         padding-right: 12px !important;
         box-sizing: border-box !important;
@@ -101,7 +129,7 @@
         z-index: 9999 !important;
       }
 
-      /* Ensure Search button and Topbar icons have comfortable touch targets */
+      /* Search & Topbar Buttons: Comfortable touch area */
       ytm-mobile-topbar-renderer .mobile-topbar-header-content,
       .mobile-topbar-header-content {
         display: flex !important;
@@ -112,30 +140,30 @@
       button[aria-label*="Search" i],
       .topbar-menu-button,
       ytm-searchbox {
-        min-width: 44px !important;
-        min-height: 44px !important;
+        min-width: 48px !important;
+        min-height: 48px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         cursor: pointer !important;
       }
 
-      /* Search Header Page (when search overlay is active) */
+      /* Search Input Header Page (Active Search) */
       ytm-search-header-renderer {
-        height: calc(56px + env(safe-area-inset-top, 0px)) !important;
-        padding-top: calc(env(safe-area-inset-top, 0px) + 14px) !important;
+        height: calc(58px + env(safe-area-inset-top, 0px)) !important;
+        padding-top: calc(env(safe-area-inset-top, 0px) + 16px) !important;
         box-sizing: border-box !important;
         background-color: #0f0f0f !important;
       }
 
-      /* Feed & Page Body: Push down cleanly below the expanded header */
+      /* Main Page Body: Push down to prevent top content being clipped under header */
       ytm-app,
       #app,
       .page-container,
       ytm-browse,
       ytm-single-column-browse-results-renderer {
-        padding-top: calc(56px + env(safe-area-inset-top, 0px)) !important;
-        padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+        padding-top: calc(58px + env(safe-area-inset-top, 0px)) !important;
+        padding-bottom: calc(54px + env(safe-area-inset-bottom, 0px)) !important;
         box-sizing: border-box !important;
       }
 
@@ -154,90 +182,86 @@
         z-index: 9998 !important;
       }
 
-      /* Watch Page (/watch): Ensure player isn't cut off by the Dynamic Island in portrait */
+      /* Watch Page (/watch): Player positioning */
       ytm-watch {
-        padding-top: calc(env(safe-area-inset-top, 0px) + 4px) !important;
+        padding-top: calc(env(safe-area-inset-top, 0px) + 6px) !important;
         box-sizing: border-box !important;
       }
 
-      /* Dialogs & Bottom Sheets: Stay above home bar and below Dynamic Island */
+      /* Bottom sheets & popups */
       ytm-bottom-sheet-renderer,
       ytm-engagement-panel-section-list-renderer,
       .dialog-container {
-        padding-top: calc(env(safe-area-inset-top, 0px) + 14px) !important;
+        padding-top: calc(env(safe-area-inset-top, 0px) + 16px) !important;
         padding-bottom: env(safe-area-inset-bottom, 0px) !important;
         box-sizing: border-box !important;
       }
 
-      /* ============================================================ */
-      /* 4. FLOATING GO BACK BUTTON (BOTTOM RIGHT CORNER)             */
-      /* ============================================================ */
+      /* --- FLOATING GO BACK BUTTON (BOTTOM RIGHT) --- */
       #yt-adfree-back-btn {
         position: fixed !important;
-        bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+        bottom: calc(66px + env(safe-area-inset-bottom, 0px)) !important;
         right: 18px !important;
-        width: 48px !important;
-        height: 48px !important;
+        width: 50px !important;
+        height: 50px !important;
         border-radius: 50% !important;
-        background: rgba(30, 30, 30, 0.88) !important;
-        backdrop-filter: blur(16px) !important;
-        -webkit-backdrop-filter: blur(16px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.25) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55), 0 1px 4px rgba(0, 0, 0, 0.35) !important;
+        background: rgba(32, 32, 32, 0.90) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        border: 1.5px solid rgba(255, 255, 255, 0.28) !important;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4) !important;
         color: #ffffff !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         cursor: pointer !important;
         z-index: 99999 !important;
-        transition: transform 0.12s ease, opacity 0.2s ease, background 0.2s ease !important;
+        transition: transform 0.12s ease, background 0.15s ease !important;
         -webkit-tap-highlight-color: transparent !important;
         outline: none !important;
         padding: 0 !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
       }
 
       #yt-adfree-back-btn:active {
-        transform: scale(0.90) !important;
-        background: rgba(55, 55, 55, 0.95) !important;
+        transform: scale(0.88) !important;
+        background: rgba(65, 65, 65, 0.95) !important;
       }
 
       #yt-adfree-back-btn svg {
-        width: 24px;
-        height: 24px;
+        width: 26px;
+        height: 26px;
         stroke: #ffffff;
-        stroke-width: 2.6;
+        stroke-width: 2.8;
         fill: none;
         stroke-linecap: round;
         stroke-linejoin: round;
         pointer-events: none;
       }
 
-      /* Hide back button when playing video in fullscreen */
+      /* Fullscreen: Hide floating back button so it doesn't obstruct video */
       :fullscreen #yt-adfree-back-btn,
       :-webkit-full-screen #yt-adfree-back-btn,
       [fullscreen="true"] #yt-adfree-back-btn,
       .fullscreen #yt-adfree-back-btn,
-      .player-fullscreen #yt-adfree-back-btn,
-      body.fullscreen-mode #yt-adfree-back-btn {
+      .player-fullscreen #yt-adfree-back-btn {
         display: none !important;
       }
 
-      /* ============================================================ */
-      /* 5. LANDSCAPE MODE ON DYNAMIC ISLAND                          */
-      /* ============================================================ */
+      /* --- LANDSCAPE CONTROLS PADDING --- */
       @media screen and (orientation: landscape) {
         body {
           padding-left: env(safe-area-inset-left, 0px) !important;
           padding-right: env(safe-area-inset-right, 0px) !important;
         }
 
-        /* Keep video player controls padded away from the pill on the side */
         .ytp-chrome-bottom,
         .ytp-chrome-top,
         .ytm-custom-control,
         .player-controls-bottom {
-          padding-left: calc(14px + env(safe-area-inset-left, 0px)) !important;
-          padding-right: calc(14px + env(safe-area-inset-right, 0px)) !important;
+          padding-left: calc(16px + env(safe-area-inset-left, 0px)) !important;
+          padding-right: calc(16px + env(safe-area-inset-right, 0px)) !important;
           box-sizing: border-box !important;
         }
 
@@ -247,9 +271,7 @@
         }
       }
 
-      /* ============================================================ */
-      /* 6. FULLSCREEN VIDEO IMMERSION                                */
-      /* ============================================================ */
+      /* --- FULLSCREEN VIDEO IMMERSION --- */
       :fullscreen,
       :-webkit-full-screen,
       [fullscreen="true"],
@@ -263,9 +285,7 @@
         max-height: 100vh !important;
       }
 
-      /* ============================================================ */
-      /* 7. TABLET / iPAD MULTI-COLUMN GRID (>= 600px)                */
-      /* ============================================================ */
+      /* --- TABLET / iPAD RESPONSIVE GRID (>= 600px) --- */
       @media screen and (min-width: 600px) {
         ytm-rich-grid-renderer .rich-grid-renderer-contents,
         ytm-item-section-renderer .item-section-renderer-contents,
@@ -301,7 +321,6 @@
         }
       }
 
-      /* Large Tablets & Desktop Widths (>= 1024px) */
       @media screen and (min-width: 1024px) {
         ytm-rich-grid-renderer .rich-grid-renderer-contents,
         ytm-item-section-renderer .item-section-renderer-contents {
@@ -312,50 +331,94 @@
         }
       }
     `;
-
-    const target = document.head || document.documentElement;
-    if (target) {
-      target.appendChild(style);
-    }
   }
 
-  // 4. Ensure Bottom-Right Floating Go Back Button
+  // =========================================================================
+  // 4. FLOATING GO BACK BUTTON (Bottom-Right, Tap: Back, Long-Press: Reload)
+  // =========================================================================
   function ensureBackButton() {
-    if (document.getElementById('yt-adfree-back-btn')) return;
+    let btn = document.getElementById('yt-adfree-back-btn');
+    if (btn) return;
 
-    const btn = document.createElement('button');
+    btn = document.createElement('button');
     btn.id = 'yt-adfree-back-btn';
-    btn.setAttribute('aria-label', 'Go Back');
-    btn.setAttribute('title', 'Go Back');
+    btn.setAttribute('aria-label', 'Go Back (Hold to Refresh)');
+    btn.setAttribute('title', 'Tap: Back | Hold: Refresh');
     btn.innerHTML = `
       <svg viewBox="0 0 24 24">
         <path d="M15 19l-7-7 7-7"/>
       </svg>
     `;
 
-    btn.addEventListener('click', function (e) {
-      e.preventDefault();
-      e.stopPropagation();
+    let pressTimer = null;
+    let isLongPress = false;
 
-      // Check if YouTube native back button exists on the page (e.g. inside search or player)
-      const nativeBackBtn =
+    // Handle touch/mouse events for tap vs long-press
+    const startPress = () => {
+      isLongPress = false;
+      pressTimer = setTimeout(() => {
+        isLongPress = true;
+        // Visual indicator that long-press triggered
+        btn.style.transform = 'scale(1.15)';
+        setTimeout(() => {
+          window.location.reload();
+        }, 150);
+      }, 600);
+    };
+
+    const cancelPress = () => {
+      clearTimeout(pressTimer);
+      btn.style.transform = '';
+    };
+
+    btn.addEventListener('touchstart', startPress, { passive: true });
+    btn.addEventListener('touchend', (e) => {
+      clearTimeout(pressTimer);
+      btn.style.transform = '';
+      if (!isLongPress) {
+        handleBackNavigation(e);
+      }
+    });
+    btn.addEventListener('touchcancel', cancelPress, { passive: true });
+
+    btn.addEventListener('mousedown', startPress);
+    btn.addEventListener('mouseup', (e) => {
+      clearTimeout(pressTimer);
+      btn.style.transform = '';
+      if (!isLongPress) {
+        handleBackNavigation(e);
+      }
+    });
+
+    function handleBackNavigation(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      // 1. Try clicking YouTube's internal back button if present
+      const internalBackBtn =
         document.querySelector('ytm-search-header-renderer button[aria-label*="Back" i]') ||
         document.querySelector('button[aria-label*="Back" i]');
 
-      if (nativeBackBtn && nativeBackBtn.offsetParent !== null && window.location.pathname !== '/') {
+      if (
+        internalBackBtn &&
+        internalBackBtn.offsetParent !== null &&
+        window.location.pathname !== '/'
+      ) {
         try {
-          nativeBackBtn.click();
+          internalBackBtn.click();
           return;
         } catch (err) {}
       }
 
-      // Fallback to browser history navigation
+      // 2. Browser history back
       if (window.history.length > 1) {
         window.history.back();
       } else {
         window.location.href = 'https://m.youtube.com';
       }
-    });
+    }
 
     const target = document.body || document.documentElement;
     if (target) {
@@ -363,7 +426,9 @@
     }
   }
 
-  // 5. Simulated Click Helper (bypasses synthetic check)
+  // =========================================================================
+  // 5. HELPER: SIMULATE TRUSTED CLICK
+  // =========================================================================
   function triggerClick(element) {
     if (!element) return;
     try {
@@ -384,7 +449,9 @@
     );
   }
 
-  // 6. Skip Button Selectors
+  // =========================================================================
+  // 6. VIDEO AD FAST-FORWARD & BYPASS LOGIC
+  // =========================================================================
   const SKIP_BUTTON_SELECTORS = [
     '.ytp-ad-skip-button',
     '.ytp-ad-skip-button-modern',
@@ -397,7 +464,6 @@
     'button[class*="skip-button"]'
   ];
 
-  // 7. Video Ad Bypass Logic
   function handleVideoAds() {
     const player =
       document.querySelector('#movie_player') ||
@@ -413,7 +479,7 @@
 
     const video = document.querySelector('video');
 
-    // Click skip buttons whenever present
+    // Click skip buttons immediately
     for (const selector of SKIP_BUTTON_SELECTORS) {
       const skipButtons = document.querySelectorAll(selector);
       skipButtons.forEach((btn) => {
@@ -423,31 +489,25 @@
       });
     }
 
-    // If ad is actively playing inside video element
+    // Fast forward active video ad
     if (isAdActive && video) {
-      // Mute ad audio so user doesn't hear it
       if (!video.dataset.originalMuted) {
         video.dataset.originalMuted = video.muted ? 'true' : 'false';
       }
       video.muted = true;
-
-      // Accelerate ad to maximum rate
       video.playbackRate = 16.0;
 
-      // Jump to end of ad
       if (isFinite(video.duration) && video.duration > 0) {
         video.currentTime = video.duration;
       } else {
         video.currentTime = 999999;
       }
 
-      // Re-trigger skip clicks
       for (const selector of SKIP_BUTTON_SELECTORS) {
         const btn = document.querySelector(selector);
         if (btn) triggerClick(btn);
       }
     } else if (video && video.dataset.originalMuted) {
-      // Restore audio when ad ends
       if (video.dataset.originalMuted === 'false') {
         video.muted = false;
       }
@@ -458,7 +518,9 @@
     }
   }
 
-  // 8. Dismiss Upsell Popups / App Prompts
+  // =========================================================================
+  // 7. DISMISS UPSELL DIALOGS & APP PROMPTS
+  // =========================================================================
   function dismissPopups() {
     const dismissSelectors = [
       'ytm-mealbar-promo-renderer button[aria-label*="dismiss" i]',
@@ -475,7 +537,9 @@
     });
   }
 
-  // 9. Main cycle
+  // =========================================================================
+  // 8. MASTER RUN CYCLE & OBSERVERS
+  // =========================================================================
   function runCheck() {
     ensureResponsiveViewport();
     injectStyles();
@@ -484,48 +548,51 @@
     dismissPopups();
   }
 
-  // Initial execution
   runCheck();
 
-  // 10. Observer & Timers for SPA & Dynamic Ad Injections
-  const observer = new MutationObserver(() => {
-    runCheck();
-  });
+  // Active mutation observer
+  if (isFirstRun) {
+    const observer = new MutationObserver(() => {
+      runCheck();
+    });
 
-  const attachObserver = () => {
-    if (document.body) {
-      observer.observe(document.body, { childList: true, subtree: true });
-    } else {
-      document.addEventListener('DOMContentLoaded', () => {
+    const attachObserver = () => {
+      if (document.body) {
         observer.observe(document.body, { childList: true, subtree: true });
-      });
+      } else {
+        document.addEventListener('DOMContentLoaded', () => {
+          if (document.body) {
+            observer.observe(document.body, { childList: true, subtree: true });
+          }
+        });
+      }
+    };
+    attachObserver();
+
+    // High frequency interval (200ms) for instantaneous ad skip & sticky UI
+    setInterval(runCheck, 200);
+
+    // SPA navigation & lifecycle events
+    window.addEventListener('yt-navigate-finish', runCheck);
+    window.addEventListener('yt-page-data-updated', runCheck);
+    window.addEventListener('popstate', runCheck);
+    window.addEventListener('resize', runCheck);
+    window.addEventListener('orientationchange', runCheck);
+
+    // Video element hooks
+    function attachVideoListeners() {
+      const video = document.querySelector('video');
+      if (video && !video.__yt_adfree_attached) {
+        video.__yt_adfree_attached = true;
+        video.addEventListener('timeupdate', handleVideoAds);
+        video.addEventListener('play', handleVideoAds);
+        video.addEventListener('loadedmetadata', handleVideoAds);
+      }
     }
-  };
-  attachObserver();
 
-  // Polling interval (250ms) for high responsiveness
-  setInterval(runCheck, 250);
+    setInterval(attachVideoListeners, 1000);
+    attachVideoListeners();
 
-  // Hook navigation & orientation events
-  window.addEventListener('yt-navigate-finish', runCheck);
-  window.addEventListener('yt-page-data-updated', runCheck);
-  window.addEventListener('popstate', runCheck);
-  window.addEventListener('resize', runCheck);
-  window.addEventListener('orientationchange', runCheck);
-
-  // Hook video element events when available
-  function attachVideoListeners() {
-    const video = document.querySelector('video');
-    if (video && !video.__yt_adfree_attached) {
-      video.__yt_adfree_attached = true;
-      video.addEventListener('timeupdate', handleVideoAds);
-      video.addEventListener('play', handleVideoAds);
-      video.addEventListener('loadedmetadata', handleVideoAds);
-    }
+    console.log('[YT-AdFree] Daily Use & Ad-Skip Engine is fully active.');
   }
-
-  setInterval(attachVideoListeners, 1000);
-  attachVideoListeners();
-
-  console.log('[YT-AdFree] Ad-Skip, Search Spacing & Go Back Engine active.');
 })();
