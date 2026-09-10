@@ -545,7 +545,93 @@
   }
 
   // =========================================================================
-  // 8. MASTER RUN CYCLE & OBSERVERS
+  // 8. BYPASS "CONTINUE WATCHING" & IDLE CONFIRMATION PROMPTS
+  // =========================================================================
+  const CONFIRM_WATCHING_SELECTORS = [
+    'yt-confirm-dialog-renderer #confirm-button',
+    'ytm-confirm-dialog-renderer #confirm-button',
+    '#confirm-button',
+    'yt-button-renderer#confirm-button button',
+    'ytm-button-renderer#confirm-button button',
+    'button[aria-label*="Yes" i]',
+    'button[aria-label*="Continue" i]',
+    'button[aria-label*="Still watching" i]',
+    'tp-yt-paper-dialog #confirm-button',
+    'yt-confirm-dialog-renderer button',
+    'ytm-confirm-dialog-renderer button',
+    '.yt-spec-button-shape-next--filled'
+  ];
+
+  function handleContinueWatchingPrompt() {
+    // 1. Check known confirm button selectors
+    for (const selector of CONFIRM_WATCHING_SELECTORS) {
+      const btn = document.querySelector(selector);
+      if (btn) {
+        console.log('[YT-AdFree] "Continue watching" button detected. Auto-confirming...');
+        triggerClick(btn);
+
+        const video = document.querySelector('video');
+        if (video && video.paused) {
+          video.play().catch(() => {});
+        }
+        return;
+      }
+    }
+
+    // 2. Check modal dialogs for text matches like "Still watching?", "Video paused"
+    const dialogs = document.querySelectorAll(
+      'yt-confirm-dialog-renderer, ytm-confirm-dialog-renderer, tp-yt-paper-dialog, .dialog-container, ytm-mealbar-promo-renderer'
+    );
+    for (const dialog of dialogs) {
+      const text = (dialog.textContent || '').toLowerCase();
+      if (
+        text.includes('continue watching') ||
+        text.includes('still watching') ||
+        text.includes('video paused') ||
+        text.includes("confirm you're still watching")
+      ) {
+        console.log('[YT-AdFree] "Continue watching" dialog text detected. Auto-resuming...');
+        const actionBtn = dialog.querySelector('button, [role="button"]');
+        if (actionBtn) {
+          triggerClick(actionBtn);
+        } else {
+          // Fallback: tap the screen/player
+          const player =
+            document.querySelector('#movie_player') ||
+            document.querySelector('.html5-video-player') ||
+            document.querySelector('video');
+          if (player) triggerClick(player);
+        }
+
+        const video = document.querySelector('video');
+        if (video && video.paused) {
+          video.play().catch(() => {});
+        }
+        return;
+      }
+    }
+  }
+
+  // 3. User Activity Simulation (Heartbeat every 2 minutes to prevent idle timeout)
+  function sendActivityHeartbeat() {
+    try {
+      const evt = new MouseEvent('mousemove', {
+        bubbles: true,
+        cancelable: true,
+        view: window
+      });
+      window.dispatchEvent(evt);
+      document.dispatchEvent(evt);
+
+      const player = document.querySelector('#movie_player');
+      if (player && typeof player.wakeUpControls === 'function') {
+        player.wakeUpControls();
+      }
+    } catch (e) {}
+  }
+
+  // =========================================================================
+  // 9. MASTER RUN CYCLE & OBSERVERS
   // =========================================================================
   function runCheck() {
     ensureResponsiveViewport();
@@ -553,6 +639,7 @@
     ensureBackButton();
     handleVideoAds();
     dismissPopups();
+    handleContinueWatchingPrompt();
   }
 
   runCheck();
@@ -579,6 +666,9 @@
     // High frequency interval (200ms) for instantaneous ad skip & sticky UI
     setInterval(runCheck, 200);
 
+    // Heartbeat every 2 minutes to prevent YouTube inactivity timeout
+    setInterval(sendActivityHeartbeat, 120000);
+
     // SPA navigation & lifecycle events
     window.addEventListener('yt-navigate-finish', runCheck);
     window.addEventListener('yt-page-data-updated', runCheck);
@@ -594,12 +684,18 @@
         video.addEventListener('timeupdate', handleVideoAds);
         video.addEventListener('play', handleVideoAds);
         video.addEventListener('loadedmetadata', handleVideoAds);
+
+        // When video is paused, verify if it was triggered by an idle prompt and auto-resume
+        video.addEventListener('pause', () => {
+          setTimeout(handleContinueWatchingPrompt, 50);
+          setTimeout(handleContinueWatchingPrompt, 300);
+        });
       }
     }
 
     setInterval(attachVideoListeners, 1000);
     attachVideoListeners();
 
-    console.log('[YT-AdFree] Daily Use & Ad-Skip Engine is fully active.');
+    console.log('[YT-AdFree] Daily Use, Ad-Skip & Continue-Watching Engine is fully active.');
   }
 })();
