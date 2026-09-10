@@ -78,7 +78,9 @@
     '.ad-showing .ytp-ad-text',
     'ytm-app-banner',
     '.app-banner',
-    'ytm-upsell-dialog-renderer'
+    'ytm-upsell-dialog-renderer',
+    'ytm-reel-ad-renderer',
+    'ytd-reel-ad-renderer'
   ].join(',\n');
 
   function injectStyles() {
@@ -497,22 +499,34 @@
     }
 
     // Fast forward active video ad
-    if (isAdActive && video) {
-      if (!video.dataset.originalMuted) {
-        video.dataset.originalMuted = video.muted ? 'true' : 'false';
-      }
-      video.muted = true;
-      video.playbackRate = 16.0;
-
-      if (isFinite(video.duration) && video.duration > 0) {
-        video.currentTime = video.duration;
-      } else {
-        video.currentTime = 999999;
+    if (isAdActive) {
+      if (player && typeof player.skipAd === 'function') {
+        try {
+          player.skipAd();
+        } catch (e) {}
       }
 
-      for (const selector of SKIP_BUTTON_SELECTORS) {
-        const btn = document.querySelector(selector);
-        if (btn) triggerClick(btn);
+      if (video) {
+        if (!video.dataset.originalMuted) {
+          video.dataset.originalMuted = video.muted ? 'true' : 'false';
+        }
+        video.muted = true;
+        video.playbackRate = 16.0;
+
+        if (isFinite(video.duration) && video.duration > 0) {
+          try {
+            video.currentTime = video.duration;
+          } catch (e) {}
+        } else {
+          try {
+            video.currentTime = 999999;
+          } catch (e) {}
+        }
+
+        for (const selector of SKIP_BUTTON_SELECTORS) {
+          const btn = document.querySelector(selector);
+          if (btn) triggerClick(btn);
+        }
       }
     } else if (video && video.dataset.originalMuted) {
       if (video.dataset.originalMuted === 'false') {
