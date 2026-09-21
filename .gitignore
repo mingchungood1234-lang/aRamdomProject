@@ -24,5 +24,7 @@ android/app/build/
 android/local.properties
 android/.idea/
 android/*.iml
-android/app/*.iml
-
+# Python
+__pycache__/
+*.py[cod]
+*$py.class

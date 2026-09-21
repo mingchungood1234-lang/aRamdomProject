@@ -368,7 +368,7 @@ class WebAppController {
     }
   }
 
-  performSearch(query, shouldPushHistory = true) {
+  async performSearch(query, shouldPushHistory = true) {
     const cleanQuery = query.trim().toLowerCase();
     this.switchView('search');
 
@@ -377,9 +377,10 @@ class WebAppController {
     const container = document.getElementById('search-results-container');
 
     if (searchTitleEl) searchTitleEl.textContent = `Results for "${query}"`;
+    if (searchCountEl) searchCountEl.textContent = 'Searching YouTube...';
 
-    // Filter curated feeds by search terms
-    let results = CURATED_FEEDS.filter((item) => {
+    // 1. Instant local search from curated feeds while fetching
+    let localResults = CURATED_FEEDS.filter((item) => {
       const matchTitle = item.title.toLowerCase().includes(cleanQuery);
       const matchChannel = item.channel.toLowerCase().includes(cleanQuery);
       const matchCategory = item.category.toLowerCase().includes(cleanQuery);
@@ -387,35 +388,32 @@ class WebAppController {
       return matchTitle || matchChannel || matchCategory || matchTags;
     });
 
-    // If no direct keyword matches, provide curated results plus fallback search card
-    if (results.length === 0) {
-      results = CURATED_FEEDS.slice(0, 4);
+    if (container && localResults.length > 0) {
+      this.renderSearchResults(localResults);
     }
 
-    if (searchCountEl) {
-      searchCountEl.textContent = `${results.length} video${results.length === 1 ? '' : 's'}`;
-    }
-
-    if (container) {
-      container.innerHTML = results
-        .map(
-          (item) => `
-        <div class="video-card" onclick='window.app.playVideo(${JSON.stringify(item)})'>
-          <div class="thumbnail-wrapper">
-            <img src="${item.thumbnail}" alt="${item.title}" loading="lazy" />
-            <span class="badge-category">${item.category}</span>
-            <div class="play-overlay">
-              <svg viewBox="0 0 24 24" width="36" height="36" fill="#ffffff"><path d="M8 5v14l11-7z"/></svg>
-            </div>
-          </div>
-          <div class="card-details">
-            <h4 class="card-title">${item.title}</h4>
-            <p class="card-channel">${item.channel}</p>
-          </div>
-        </div>
-      `
-        )
-        .join('');
+    // 2. Fetch live YouTube search results from host streaming server
+    try {
+      const resp = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.results && data.results.length > 0) {
+          this.renderSearchResults(data.results);
+          if (searchCountEl) {
+            searchCountEl.textContent = `${data.results.length} live results`;
+          }
+        } else if (localResults.length > 0) {
+          this.renderSearchResults(localResults);
+          if (searchCountEl) searchCountEl.textContent = `${localResults.length} curated results`;
+        } else {
+          this.renderSearchResults(CURATED_FEEDS.slice(0, 4));
+        }
+      }
+    } catch (err) {
+      console.warn('[Search] Live search request failed, using curated results:', err);
+      if (localResults.length === 0) localResults = CURATED_FEEDS.slice(0, 4);
+      this.renderSearchResults(localResults);
+      if (searchCountEl) searchCountEl.textContent = `${localResults.length} results`;
     }
 
     const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
@@ -429,6 +427,31 @@ class WebAppController {
     } else {
       this.updateAddressBar(searchUrl);
     }
+  }
+
+  renderSearchResults(items) {
+    const container = document.getElementById('search-results-container');
+    if (!container) return;
+
+    container.innerHTML = items
+      .map(
+        (item) => `
+      <div class="video-card" onclick='window.app.playVideo(${JSON.stringify(item)})'>
+        <div class="thumbnail-wrapper">
+          <img src="${item.thumbnail}" alt="${item.title}" loading="lazy" />
+          <span class="badge-category">${item.category || 'Video'}</span>
+          <div class="play-overlay">
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="#ffffff"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+        <div class="card-details">
+          <h4 class="card-title">${item.title}</h4>
+          <p class="card-channel">${item.channel}</p>
+        </div>
+      </div>
+    `
+      )
+      .join('');
   }
 
   /* =========================================================================
