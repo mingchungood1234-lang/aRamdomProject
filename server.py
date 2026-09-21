@@ -6,6 +6,7 @@ Enables unbroken mobile background audio playback and live search via yt-dlp.
 
 import os
 import sys
+import re
 import json
 import time
 import urllib.parse
@@ -27,6 +28,8 @@ YDL_INFO_OPTS = {
     'quiet': True,
     'no_warnings': True,
     'noplaylist': True,
+    'js_runtimes': {'node': {'path': 'node'}},
+    'remote_components': ['ejs:github'],
 }
 
 YDL_SEARCH_OPTS = {
@@ -46,12 +49,20 @@ def get_audio_info(video_id):
     with yt_dlp.YoutubeDL(YDL_INFO_OPTS) as ydl:
         info = ydl.extract_info(video_id, download=False)
         audio_url = info.get('url')
+        if not audio_url and info.get('formats'):
+            # Fallback to best audio stream from formats list
+            for f in reversed(info.get('formats', [])):
+                if f.get('acodec') != 'none' and f.get('url'):
+                    audio_url = f.get('url')
+                    break
+
         clean_info = {
             'id': video_id,
             'title': info.get('title', 'Unknown Title'),
             'channel': info.get('uploader') or info.get('channel') or 'YouTube',
             'duration': info.get('duration', 0),
-            'thumbnail': info.get('thumbnail') or f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
+            'thumbnail': info.get('thumbnail') or f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg",
+            'is_live': bool(info.get('is_live') or info.get('live_status') == 'is_live')
         }
         STREAM_CACHE[video_id] = {
             'info': clean_info,
@@ -156,7 +167,12 @@ class StreamingHandler(SimpleHTTPRequestHandler):
             self.handle_api_suggest(params)
             return
 
-        # 3. API: Audio Stream Proxy
+        # 4. API: Dynamic Related Recommendations
+        if path == '/api/related':
+            self.handle_api_related(params)
+            return
+
+        # 5. API: Audio Stream Proxy
         if path == '/api/stream':
             self.handle_api_stream(params)
             return
@@ -204,6 +220,30 @@ class StreamingHandler(SimpleHTTPRequestHandler):
             self.send_json_response({'query': query, 'suggestions': suggestions})
         except Exception as e:
             self.send_json_response({'query': query, 'suggestions': []})
+
+    def handle_api_related(self, params):
+        vid = params.get('v', [None])[0]
+        title = params.get('title', [''])[0]
+        channel = params.get('channel', [''])[0]
+
+        # Clean title: strip (Official Video), [Music Video], HD, 4K, lyrics, etc.
+        clean_title = re.sub(r'[\(\[].*?[\)\]]', '', title).strip()
+        query_parts = []
+        if channel and channel != 'YouTube' and channel.lower() not in clean_title.lower():
+            query_parts.append(channel)
+        if clean_title:
+            query_parts.append(clean_title)
+        query = ' '.join(query_parts).strip()
+        if not query and vid:
+            query = vid
+
+        try:
+            items = search_youtube(query, max_results=12)
+            # Filter out the currently playing video ID
+            related = [item for item in items if item.get('id') != vid]
+            self.send_json_response({'v': vid, 'results': related})
+        except Exception as e:
+            self.send_json_response({'error': str(e), 'results': []}, status=500)
 
     def handle_api_stream(self, params):
         vid = params.get('v', [None])[0]

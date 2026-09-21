@@ -9,7 +9,7 @@
 
 const CURATED_FEEDS = [
   {
-    id: 'jfKfPfyJRdk',
+    id: 'rFZHOHl-L8A',
     title: 'Lofi Girl - Relaxing Beats to Study/Chill to',
     channel: 'Lofi Girl',
     category: 'Lofi',
@@ -18,7 +18,7 @@ const CURATED_FEEDS = [
     views: '45K watching',
     timeAgo: 'Started streaming',
     tags: ['lofi', 'beats', 'study', 'relax', 'chill', 'music'],
-    thumbnail: 'https://img.youtube.com/vi/jfKfPfyJRdk/hqdefault.jpg'
+    thumbnail: 'https://img.youtube.com/vi/rFZHOHl-L8A/hqdefault.jpg'
   },
   {
     id: '4xDzrJKXOOY',
@@ -33,16 +33,16 @@ const CURATED_FEEDS = [
     thumbnail: 'https://img.youtube.com/vi/4xDzrJKXOOY/hqdefault.jpg'
   },
   {
-    id: '5qap5aO4i9A',
-    title: 'Lofi Hip Hop Radio - Beats to Sleep/Chill to',
-    channel: 'ChilledCow',
+    id: 'blAFxjhg62k',
+    title: 'Coffee Shop Radio - 24/7 Chill Lo-Fi & Jazzy Beats',
+    channel: 'Lofi Coffee',
     category: 'Lofi',
     duration: 0,
     duration_text: 'LIVE',
-    views: '28K watching',
+    views: '18K watching',
     timeAgo: 'Live',
-    tags: ['lofi', 'sleep', 'beats', 'chill', 'music'],
-    thumbnail: 'https://img.youtube.com/vi/5qap5aO4i9A/hqdefault.jpg'
+    tags: ['lofi', 'coffee', 'jazz', 'beats', 'chill', 'music'],
+    thumbnail: 'https://img.youtube.com/vi/blAFxjhg62k/hqdefault.jpg'
   },
   {
     id: '1fueZCTYkpA',
@@ -128,13 +128,13 @@ class WebAppController {
     this.currentPlaylist = [...CURATED_FEEDS];
     this.currentIndex = 0;
     this.currentView = 'home';
+    this.categoryCache = {};
 
     this.suggestDebounceTimer = null;
     this.isLiked = false;
 
     this.initUI();
     this.renderFeeds();
-    this.renderUpNext();
     this.renderFavorites();
   }
 
@@ -376,8 +376,8 @@ class WebAppController {
     this.addToHistory(videoInfo);
     this.updateSubscribeButtonState(videoInfo.channel);
 
-    // Render related Up Next recommendations
-    this.renderUpNext(videoInfo.id);
+    // Fetch and render dynamic related recommendations for this track
+    this.renderUpNext(videoInfo);
 
     // Scroll smoothly to the player
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -474,24 +474,101 @@ class WebAppController {
   /* =========================================================================
      RENDERING HELPERS (Default Mobile YouTube Card Template)
      ========================================================================= */
-  renderFeeds() {
+  async renderFeeds() {
     const container = document.getElementById('feeds-grid');
     if (!container) return;
 
-    let items = CURATED_FEEDS;
-    if (this.currentCategory !== 'All') {
-      items = CURATED_FEEDS.filter((f) => f.category === this.currentCategory);
+    const cat = this.currentCategory;
+    if (this.categoryCache[cat]) {
+      this.currentPlaylist = this.categoryCache[cat];
+      this.renderCardList(this.categoryCache[cat], container);
+      return;
     }
-    this.currentPlaylist = items;
+
+    container.innerHTML = `
+      <div class="yt-empty-state" style="padding: 28px 16px;">
+        <p style="font-size: 14px; color: #888;">Loading ${cat === 'All' ? 'recommended' : cat} videos...</p>
+      </div>
+    `;
+
+    const queryMap = {
+      'All': 'trending music and videos',
+      'Music': 'popular music hits official',
+      'Lofi': 'lofi hip hop radio beats to relax',
+      'Ambience': 'relaxing coffee ambience jazz',
+      'Focus': 'study music focus alpha waves',
+      'Podcasts': 'popular podcast episodes',
+      'Gaming': 'trending gaming highlights',
+      'Live': 'live streams music'
+    };
+
+    const query = queryMap[cat] || cat;
+    try {
+      const resp = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        const results = data.results || [];
+        if (results.length > 0) {
+          this.categoryCache[cat] = results;
+          this.currentPlaylist = results;
+          this.renderCardList(results, container);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('[App] Failed to load dynamic feeds:', e);
+    }
+
+    // Fallback if network is unavailable
+    let items = CURATED_FEEDS;
+    if (cat !== 'All') {
+      items = CURATED_FEEDS.filter((f) => f.category === cat);
+    }
     this.renderCardList(items, container);
   }
 
-  renderUpNext(excludeId = null) {
+  async renderUpNext(videoInfo) {
     const container = document.getElementById('up-next-feed');
     if (!container) return;
 
-    let items = CURATED_FEEDS.filter((f) => f.id !== excludeId);
-    this.renderCardList(items, container);
+    if (!videoInfo || !videoInfo.id) {
+      container.innerHTML = '';
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="yt-empty-state" style="padding: 16px 12px; text-align: left;">
+        <p style="font-size: 13px; color: #888; margin: 0;">Loading related recommendations...</p>
+      </div>
+    `;
+
+    try {
+      const vid = videoInfo.id;
+      const title = encodeURIComponent(videoInfo.title || '');
+      const channel = encodeURIComponent(videoInfo.channel || '');
+      const resp = await fetch(`/api/related?v=${vid}&title=${title}&channel=${channel}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        const results = data.results || [];
+        if (results.length > 0) {
+          const filtered = results.filter((r) => r.id !== vid);
+          if (filtered.length > 0) {
+            this.renderCardList(filtered, container);
+            this.currentPlaylist = [videoInfo, ...filtered];
+            this.currentIndex = 0;
+            return;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[App] Failed to fetch dynamic related videos:', e);
+    }
+
+    container.innerHTML = `
+      <div class="yt-empty-state" style="padding: 16px 12px;">
+        <p style="font-size: 13px; color: #666; margin: 0;">No related videos found.</p>
+      </div>
+    `;
   }
 
   renderSubscriptions() {

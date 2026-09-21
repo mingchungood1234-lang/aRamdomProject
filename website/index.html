@@ -82,7 +82,29 @@
     <section id="yt-watch-section" class="yt-watch-section" style="display: none;">
       <!-- 16:9 Video Frame with Native YouTube Controls -->
       <div class="yt-player-wrapper">
-        <div id="yt-player-container"></div>
+        <iframe
+          id="yt-player-iframe"
+          class="yt-player-iframe"
+          src=""
+          title="YouTube video player"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+          playsinline
+          webkit-playsinline>
+        </iframe>
+        <!-- Fallback banner for error 150 / embedding restricted by owner -->
+        <div id="yt-restricted-banner" class="yt-restricted-banner" style="display: none;">
+          <div class="yt-restricted-content">
+            <svg viewBox="0 0 24 24" class="yt-restricted-icon"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+            <h3>Playback Restricted by Owner</h3>
+            <p>The copyright owner disabled video embedding on 3rd-party sites.</p>
+            <div class="yt-restricted-actions">
+              <button class="yt-btn-pill primary" onclick="window.playerManager.switchToNativeAudio(0, true)">Listen to Audio Stream</button>
+              <a id="yt-watch-external-link" href="#" target="_blank" rel="noopener noreferrer" class="yt-btn-pill">Watch on YouTube</a>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Dedicated Audio Mode Banner (Visible when Audio Only is active) -->

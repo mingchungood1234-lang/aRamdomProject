@@ -78,7 +78,8 @@ class YouTubePlayerManager {
     });
 
     this.nativeAudio.addEventListener('error', (e) => {
-      console.warn('[NativeAudio] Stream error, falling back to iframe:', e);
+      console.warn('[NativeAudio] Stream error:', e);
+      this.showToast('Audio stream unavailable for this track.');
       if (this.isAudioOnlyMode) {
         this.toggleAudioOnlyMode();
       }
@@ -186,7 +187,11 @@ class YouTubePlayerManager {
     const tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
     const firstScript = document.getElementsByTagName('script')[0];
-    firstScript.parentNode.insertBefore(tag, firstScript);
+    if (firstScript && firstScript.parentNode) {
+      firstScript.parentNode.insertBefore(tag, firstScript);
+    } else {
+      document.head.appendChild(tag);
+    }
 
     window.onYouTubeIframeAPIReady = () => {
       this.onAPIReady();
@@ -196,8 +201,8 @@ class YouTubePlayerManager {
   onAPIReady() {
     this.isReady = true;
     console.log('[PlayerManager] YouTube IFrame API Ready.');
-    if (this.currentVideoId && !this.player && !this.isAudioOnlyMode) {
-      this.createPlayer(this.currentVideoId);
+    if (this.currentVideoId && !this.isAudioOnlyMode) {
+      this.initPlayerController(this.currentVideoId);
     }
   }
 
@@ -266,32 +271,46 @@ class YouTubePlayerManager {
       duration: 0
     };
 
-    this.updatePlayerUI();
-    this.fetchServerMetadata(videoId);
-
-    if (this.isAudioOnlyMode) {
-      this.switchToNativeAudio(0, true);
-      return true;
-    }
-
+    // Reset audio-only mode on every new video load
+    this.isAudioOnlyMode = false;
     this.isNativeAudioActive = false;
     if (this.nativeAudio) {
       this.nativeAudio.pause();
     }
 
-    if (!this.isReady) {
-      console.log('[PlayerManager] API not ready yet, queuing video:', videoId);
-      return true;
+    const watchSection = document.getElementById('yt-watch-section');
+    if (watchSection) {
+      watchSection.style.display = 'block';
+      watchSection.classList.remove('audio-only-mode');
     }
 
-    if (!this.player) {
-      this.createPlayer(videoId);
-    } else {
-      this.player.loadVideoById({
-        videoId: videoId,
-        suggestedQuality: 'hd720'
-      });
+    const restrictedBanner = document.getElementById('yt-restricted-banner');
+    if (restrictedBanner) {
+      restrictedBanner.style.display = 'none';
     }
+
+    const extLink = document.getElementById('yt-watch-external-link');
+    if (extLink) {
+      extLink.href = `https://www.youtube.com/watch?v=${videoId}`;
+    }
+
+    const audioToggleBtn = document.getElementById('btn-audio-only');
+    if (audioToggleBtn) audioToggleBtn.classList.remove('active');
+    const audioLabel = document.getElementById('audio-mode-label');
+    if (audioLabel) audioLabel.textContent = 'Background Audio';
+
+    this.updatePlayerUI();
+    this.fetchServerMetadata(videoId);
+
+    // 1. Set iframe src directly (Guarantees instant loading on mobile Safari & Android)
+    const iframe = document.getElementById('yt-player-iframe');
+    const embedSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&playsinline=1&controls=1&rel=0&enablejsapi=1&fs=1`;
+    if (iframe) {
+      iframe.src = embedSrc;
+    }
+
+    // 2. Attach or trigger YouTube IFrame API controller
+    this.initPlayerController(videoId);
 
     return true;
   }
@@ -323,36 +342,35 @@ class YouTubePlayerManager {
     } catch (e) {}
   }
 
-  createPlayer(videoId) {
-    const container = document.getElementById('yt-player-container');
-    if (!container) return;
+  initPlayerController(videoId) {
+    if (!window.YT || !window.YT.Player) return;
 
-    this.player = new YT.Player('yt-player-container', {
-      height: '100%',
-      width: '100%',
-      videoId: videoId,
-      host: 'https://www.youtube-nocookie.com',
-      playerVars: {
-        autoplay: 1,
-        playsinline: 1,
-        controls: 1,           // Native YouTube controls
-        rel: 0,
-        fs: 1,
-        enablejsapi: 1,
-        origin: window.location.origin
-      },
-      events: {
-        onReady: (event) => this.onPlayerReady(event),
-        onStateChange: (event) => this.onPlayerStateChange(event),
-        onError: (event) => this.onPlayerError(event)
+    try {
+      if (!this.player) {
+        this.player = new YT.Player('yt-player-iframe', {
+          events: {
+            onReady: (event) => this.onPlayerReady(event),
+            onStateChange: (event) => this.onPlayerStateChange(event),
+            onError: (event) => this.onPlayerError(event)
+          }
+        });
+      } else if (typeof this.player.loadVideoById === 'function') {
+        this.player.loadVideoById({
+          videoId: videoId,
+          suggestedQuality: 'hd720'
+        });
       }
-    });
+    } catch (e) {
+      console.warn('[PlayerManager] Controller note:', e);
+    }
   }
 
   onPlayerReady(event) {
     console.log('[PlayerManager] YouTube Native Player ready, playing...');
     if (!this.isAudioOnlyMode) {
-      event.target.playVideo();
+      try {
+        event.target.playVideo();
+      } catch (e) {}
     }
     this.updatePlayerUI();
   }
@@ -387,8 +405,28 @@ class YouTubePlayerManager {
   }
 
   onPlayerError(event) {
-    console.error('[PlayerManager] IFrame error code:', event.data);
-    this.switchToNativeAudio(0, true);
+    const errCode = event.data;
+    console.error('[PlayerManager] IFrame error code:', errCode);
+
+    if (errCode === 150 || errCode === 101) {
+      console.log('[PlayerManager] Video embedding restricted by owner. Showing option banner.');
+      const restrictedBanner = document.getElementById('yt-restricted-banner');
+      if (restrictedBanner) {
+        restrictedBanner.style.display = 'flex';
+      }
+      this.showToast('Playback restricted by owner. Choose an option below.');
+      return;
+    }
+
+    if (errCode === 100) {
+      this.showToast('Video not found, removed, or private.');
+      return;
+    }
+
+    if (errCode === 2) {
+      this.showToast('Invalid YouTube video parameter.');
+      return;
+    }
   }
 
   switchToNativeAudio(startTime = 0, autoplay = true) {
@@ -442,7 +480,11 @@ class YouTubePlayerManager {
         this.player.playVideo();
       }
     } else if (this.currentVideoId) {
-      this.createPlayer(this.currentVideoId);
+      const iframe = document.getElementById('yt-player-iframe');
+      if (iframe) {
+        iframe.src = `https://www.youtube.com/embed/${this.currentVideoId}?autoplay=1&playsinline=1&controls=1&rel=0&enablejsapi=1&fs=1`;
+      }
+      this.initPlayerController(this.currentVideoId);
     }
   }
 
@@ -596,6 +638,39 @@ class YouTubePlayerManager {
     const m = Math.floor(sec / 60);
     const s = sec % 60;
     return `${m}:${s < 10 ? '0' : ''}${s}`;
+  }
+
+  showToast(message, durationMs = 3500) {
+    let toast = document.getElementById('yt-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'yt-toast';
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 74px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(33, 33, 33, 0.95);
+        color: #fff;
+        padding: 10px 18px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 500;
+        z-index: 9999;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        text-align: center;
+        max-width: 90vw;
+      `;
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.style.opacity = '1';
+    if (this._toastTimer) clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => {
+      if (toast) toast.style.opacity = '0';
+    }, durationMs);
   }
 }
 
