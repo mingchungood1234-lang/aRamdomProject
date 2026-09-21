@@ -1,7 +1,6 @@
 /**
  * YouTube & Native Audio Player Manager - Default YouTube Mobile Edition
- * Uses YouTube's official native player controls (controls: 1) for on-screen playback,
- * and seamlessly powers unbroken background audio via the host streaming server (/api/stream?v=...).
+ * Supports YouTube native controls and dual-engine progress bar for both video and audio.
  */
 class YouTubePlayerManager {
   constructor() {
@@ -11,13 +10,17 @@ class YouTubePlayerManager {
     this.currentVideoInfo = null;
     this.isAudioOnlyMode = false;
     this.isNativeAudioActive = false;
+    this.isDraggingProgress = false;
+    this.trackingInterval = null;
 
     this.nativeAudio = null;
 
     this.initNativeAudio();
     this.initYouTubeAPI();
+    this.initProgressControls();
     this.connectBackgroundAudio();
     this.setupVisibilityHandoff();
+    this.startContinuousTracking();
   }
 
   /**
@@ -35,6 +38,7 @@ class YouTubePlayerManager {
     }
 
     this.nativeAudio.addEventListener('play', () => {
+      this.updateAudioControlsUI(true);
       if (window.backgroundAudio) {
         window.backgroundAudio.updatePlaybackState(
           true,
@@ -45,6 +49,7 @@ class YouTubePlayerManager {
     });
 
     this.nativeAudio.addEventListener('pause', () => {
+      this.updateAudioControlsUI(false);
       if (window.backgroundAudio) {
         window.backgroundAudio.updatePlaybackState(
           false,
@@ -58,6 +63,8 @@ class YouTubePlayerManager {
       if (!this.isNativeAudioActive) return;
       const current = this.nativeAudio.currentTime || 0;
       const duration = this.nativeAudio.duration || (this.currentVideoInfo ? this.currentVideoInfo.duration : 0) || 0;
+
+      this.updateProgress(current, duration);
 
       if (window.backgroundAudio) {
         window.backgroundAudio.updatePlaybackState(true, current, duration);
@@ -76,6 +83,79 @@ class YouTubePlayerManager {
         this.toggleAudioOnlyMode();
       }
     });
+  }
+
+  /**
+   * Initialize interactive scrubber progress bar for both video and audio
+   */
+  initProgressControls() {
+    const slider = document.getElementById('yt-progress-slider');
+    const bar = document.getElementById('yt-progress-bar');
+    const timeCurrent = document.getElementById('yt-time-current');
+
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        this.isDraggingProgress = true;
+        const percent = parseFloat(e.target.value);
+        if (bar) bar.style.width = `${percent}%`;
+
+        const duration = this.getDuration();
+        if (duration > 0 && timeCurrent) {
+          const seekSec = (percent / 100) * duration;
+          timeCurrent.textContent = this.formatTime(seekSec);
+        }
+      });
+
+      slider.addEventListener('change', (e) => {
+        this.isDraggingProgress = false;
+        const percent = parseFloat(e.target.value);
+        const duration = this.getDuration();
+        if (duration > 0) {
+          const seekSec = (percent / 100) * duration;
+          this.seekTo(seekSec);
+        }
+      });
+    }
+  }
+
+  /**
+   * Real-time progress bar updater
+   */
+  updateProgress(current, duration) {
+    if (this.isDraggingProgress) return;
+
+    const bar = document.getElementById('yt-progress-bar');
+    const slider = document.getElementById('yt-progress-slider');
+    const timeCurrent = document.getElementById('yt-time-current');
+    const timeDuration = document.getElementById('yt-time-duration');
+
+    const percent = duration > 0 ? Math.min(100, Math.max(0, (current / duration) * 100)) : 0;
+
+    if (bar) bar.style.width = `${percent}%`;
+    if (slider) slider.value = percent;
+    if (timeCurrent) timeCurrent.textContent = this.formatTime(current);
+    if (timeDuration && duration > 0) timeDuration.textContent = this.formatTime(duration);
+  }
+
+  /**
+   * Continuous tracking loop for iframe video playback
+   */
+  startContinuousTracking() {
+    if (this.trackingInterval) clearInterval(this.trackingInterval);
+
+    this.trackingInterval = setInterval(() => {
+      if (this.isNativeAudioActive) return; // Native audio uses 'timeupdate' event
+
+      if (this.isPlaying()) {
+        const current = this.getCurrentTime();
+        const duration = this.getDuration();
+        this.updateProgress(current, duration);
+
+        if (window.backgroundAudio) {
+          window.backgroundAudio.updatePlaybackState(true, current, duration);
+        }
+      }
+    }, 250);
   }
 
   /**
@@ -247,7 +327,6 @@ class YouTubePlayerManager {
     const container = document.getElementById('yt-player-container');
     if (!container) return;
 
-    // Notice: controls: 1 activates YouTube's official native player controls
     this.player = new YT.Player('yt-player-container', {
       height: '100%',
       width: '100%',
@@ -256,7 +335,7 @@ class YouTubePlayerManager {
       playerVars: {
         autoplay: 1,
         playsinline: 1,
-        controls: 1,           // DEFAULT NATIVE YOUTUBE CONTROLS (red bar, gear, fullscreen)
+        controls: 1,           // Native YouTube controls
         rel: 0,
         fs: 1,
         enablejsapi: 1,
@@ -286,6 +365,8 @@ class YouTubePlayerManager {
 
     const currentTime = this.getCurrentTime();
     const duration = this.getDuration();
+
+    this.updateProgress(currentTime, duration);
 
     if (window.backgroundAudio) {
       window.backgroundAudio.updatePlaybackState(isPlaying, currentTime, duration);
@@ -333,6 +414,8 @@ class YouTubePlayerManager {
     if (autoplay) {
       this.nativeAudio.play().catch(() => {});
     }
+
+    this.updateAudioControlsUI(true);
 
     if (window.backgroundAudio && this.currentVideoInfo) {
       window.backgroundAudio.updateMetadata({
@@ -382,10 +465,23 @@ class YouTubePlayerManager {
     const currentTime = this.getCurrentTime();
     const isCurrentlyPlaying = this.isPlaying();
 
+    this.updatePlayerUI();
+
     if (this.isAudioOnlyMode) {
       this.switchToNativeAudio(currentTime, isCurrentlyPlaying);
     } else {
       this.switchToIframe(currentTime, isCurrentlyPlaying);
+    }
+  }
+
+  updateAudioControlsUI(isPlaying) {
+    const btn = document.getElementById('btn-audio-play-toggle');
+    if (!btn) return;
+
+    if (isPlaying) {
+      btn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+    } else {
+      btn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
     }
   }
 
@@ -435,6 +531,14 @@ class YouTubePlayerManager {
     }
   }
 
+  togglePlay() {
+    if (this.isPlaying()) {
+      this.pause();
+    } else {
+      this.play();
+    }
+  }
+
   seekTo(seconds) {
     const target = Math.max(0, seconds);
     if (this.isNativeAudioActive && this.nativeAudio) {
@@ -442,6 +546,12 @@ class YouTubePlayerManager {
     } else if (this.player && this.player.seekTo) {
       this.player.seekTo(target, true);
     }
+    this.updateProgress(target, this.getDuration());
+  }
+
+  seekRelative(offsetSeconds) {
+    const target = this.getCurrentTime() + offsetSeconds;
+    this.seekTo(target);
   }
 
   updatePlayerUI() {
@@ -453,6 +563,11 @@ class YouTubePlayerManager {
     const avatarEl = document.getElementById('yt-channel-avatar');
     const metaEl = document.getElementById('yt-video-views-date');
 
+    // Audio Mode Banner Elements
+    const audioThumbEl = document.getElementById('yt-audio-banner-thumb');
+    const audioTitleEl = document.getElementById('yt-audio-banner-title');
+    const audioChannelEl = document.getElementById('yt-audio-banner-channel');
+
     if (titleEl) titleEl.textContent = this.currentVideoInfo.title;
     if (channelNameEl) channelNameEl.textContent = this.currentVideoInfo.channel;
     if (avatarEl) {
@@ -463,9 +578,17 @@ class YouTubePlayerManager {
       metaEl.textContent = `1.4M views • Ad-Free Background Playback`;
     }
 
+    if (audioThumbEl) audioThumbEl.src = this.currentVideoInfo.thumbnail;
+    if (audioTitleEl) audioTitleEl.textContent = this.currentVideoInfo.title;
+    if (audioChannelEl) audioChannelEl.textContent = this.currentVideoInfo.channel;
+
     if (watchSection) {
       watchSection.style.display = 'block';
     }
+
+    const current = this.getCurrentTime();
+    const duration = this.getDuration();
+    this.updateProgress(current, duration);
   }
 
   formatTime(seconds) {

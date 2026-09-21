@@ -85,6 +85,43 @@
         <div id="yt-player-container"></div>
       </div>
 
+      <!-- Dedicated Audio Mode Banner (Visible when Audio Only is active) -->
+      <div id="yt-audio-mode-banner" class="yt-audio-mode-banner" style="display: none;">
+        <img id="yt-audio-banner-thumb" class="yt-audio-thumb" src="" alt="Thumbnail" />
+        <div class="yt-audio-banner-text">
+          <div class="yt-audio-badge">
+            <svg viewBox="0 0 24 24"><path d="M12 3v9.28a4.39 4.39 0 0 0-1.5-.28 4.5 4.5 0 1 0 4.5 4.5V6h4V3h-7z"/></svg>
+            <span>Background Audio Stream</span>
+          </div>
+          <div id="yt-audio-banner-title" class="yt-audio-title">Title</div>
+          <div id="yt-audio-banner-channel" class="yt-audio-channel">Channel</div>
+        </div>
+        <div class="yt-audio-controls">
+          <button class="yt-audio-ctrl-btn" onclick="window.playerManager.seekRelative(-10)" aria-label="Rewind 10s">
+            <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+          </button>
+          <button id="btn-audio-play-toggle" class="yt-audio-ctrl-btn play-btn" onclick="window.playerManager.togglePlay()" aria-label="Play/Pause">
+            <svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          </button>
+          <button class="yt-audio-ctrl-btn" onclick="window.playerManager.seekRelative(10)" aria-label="Forward 10s">
+            <svg viewBox="0 0 24 24"><path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Signature YouTube Red Scrubber Progress Bar & Time Tracker -->
+      <div class="yt-progress-container">
+        <div class="yt-progress-track">
+          <div id="yt-progress-bar" class="yt-progress-fill" style="width: 0%;"></div>
+          <input id="yt-progress-slider" type="range" class="yt-progress-range" min="0" max="100" value="0" step="0.1" aria-label="Seek progress" />
+        </div>
+        <div class="yt-progress-time-row">
+          <span id="yt-time-current" class="yt-time-label">0:00</span>
+          <span class="yt-time-sep">/</span>
+          <span id="yt-time-duration" class="yt-time-label">0:00</span>
+        </div>
+      </div>
+
       <!-- Watch Details: Title, Channel, Actions (Default YouTube Layout) -->
       <div class="yt-watch-info">
         <h1 id="yt-video-title" class="yt-watch-title">Select a video to play</h1>
