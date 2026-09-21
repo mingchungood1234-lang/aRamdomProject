@@ -60,7 +60,33 @@ def get_audio_info(video_id):
         }
         return clean_info, audio_url
 
-def search_youtube(query, max_results=12):
+def format_seconds(seconds):
+    """Format seconds into MM:SS or H:MM:SS string."""
+    if not seconds:
+        return ""
+    try:
+        sec = int(seconds)
+        m, s = divmod(sec, 60)
+        h, m = divmod(m, 60)
+        if h > 0:
+            return f"{h}:{m:02d}:{s:02d}"
+        return f"{m}:{s:02d}"
+    except Exception:
+        return ""
+
+def get_search_suggestions(query):
+    """Fetch live YouTube search suggestions."""
+    try:
+        q = urllib.parse.quote(query)
+        url = f"https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q={q}"
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=4) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+            return data[1] if len(data) > 1 else []
+    except Exception:
+        return []
+
+def search_youtube(query, max_results=16):
     """Perform fast flat YouTube search via yt-dlp."""
     search_term = f"ytsearch{max_results}:{query}"
     with yt_dlp.YoutubeDL(YDL_SEARCH_OPTS) as ydl:
@@ -70,11 +96,13 @@ def search_youtube(query, max_results=12):
             vid_id = entry.get('id')
             if not vid_id or len(vid_id) != 11:
                 continue
+            dur = entry.get('duration', 0)
             results.append({
                 'id': vid_id,
                 'title': entry.get('title', 'YouTube Video'),
                 'channel': entry.get('uploader') or entry.get('channel') or 'YouTube',
-                'duration': entry.get('duration', 0),
+                'duration': dur,
+                'duration_text': format_seconds(dur),
                 'thumbnail': f"https://img.youtube.com/vi/{vid_id}/hqdefault.jpg",
                 'category': 'Search'
             })
@@ -97,6 +125,11 @@ class StreamingHandler(SimpleHTTPRequestHandler):
         # 2. API: Live Search
         if path == '/api/search':
             self.handle_api_search(params)
+            return
+
+        # 3. API: Search Autocomplete Suggestions
+        if path == '/api/suggest':
+            self.handle_api_suggest(params)
             return
 
         # 3. API: Audio Stream Proxy
@@ -131,6 +164,18 @@ class StreamingHandler(SimpleHTTPRequestHandler):
             self.send_json_response({'query': query, 'results': items})
         except Exception as e:
             self.send_json_response({'error': str(e), 'results': []}, status=500)
+
+    def handle_api_suggest(self, params):
+        query = params.get('q', [None])[0]
+        if not query:
+            self.send_json_response({'query': '', 'suggestions': []})
+            return
+
+        try:
+            suggestions = get_search_suggestions(query)
+            self.send_json_response({'query': query, 'suggestions': suggestions})
+        except Exception as e:
+            self.send_json_response({'query': query, 'suggestions': []})
 
     def handle_api_stream(self, params):
         vid = params.get('v', [None])[0]
@@ -227,3 +272,4 @@ if __name__ == '__main__':
         except ValueError:
             pass
     run(port)
+

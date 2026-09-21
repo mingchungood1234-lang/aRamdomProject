@@ -36,14 +36,17 @@
     </div>
 
     <!-- Browser Address / Search Bar -->
-    <form id="browser-address-form" class="browser-address-box">
-      <span class="security-lock">
-        <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-      </span>
-      <input id="browser-address-input" type="text" class="browser-address-input" placeholder="Search YouTube or paste URL..." autocomplete="off" spellcheck="false" />
-      <button type="button" id="btn-clear-address" class="btn-clear" style="display: none;">&times;</button>
-      <button type="submit" class="btn-address-go">Go</button>
-    </form>
+    <div class="browser-address-container">
+      <form id="browser-address-form" class="browser-address-box">
+        <span class="security-lock">
+          <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+        </span>
+        <input id="browser-address-input" type="text" class="browser-address-input" placeholder="Search YouTube or paste URL..." autocomplete="off" spellcheck="false" />
+        <button type="button" id="btn-clear-address" class="btn-clear" style="display: none;">&times;</button>
+        <button type="submit" class="btn-address-go">Go</button>
+      </form>
+      <div id="address-suggestions" class="suggestions-dropdown" style="display: none;"></div>
+    </div>
 
     <!-- Home Button -->
     <button id="btn-browser-home" class="nav-icon-btn" aria-label="Home">
@@ -141,8 +144,48 @@
       <div id="feeds-grid" class="feeds-grid"></div>
     </div>
 
-    <!-- BROWSER VIEW 2: SEARCH RESULTS -->
+    <!-- BROWSER VIEW 2: SEARCH TAB -->
     <div id="view-search" class="browser-tab-view">
+      <div class="search-tab-header">
+        <!-- Dedicated In-Tab Search Bar -->
+        <div class="tab-search-wrapper">
+          <form id="tab-search-form" class="tab-search-box">
+            <span class="search-box-icon">
+              <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 14z"/></svg>
+            </span>
+            <input id="tab-search-input" type="text" class="tab-search-input" placeholder="Search songs, artists, podcasts, or paste URL..." autocomplete="off" spellcheck="false" />
+            <button type="button" id="btn-tab-search-clear" class="btn-clear" style="display: none;">&times;</button>
+            <button type="submit" class="btn-search-action">Search</button>
+          </form>
+          <div id="tab-suggestions" class="suggestions-dropdown" style="display: none;"></div>
+        </div>
+
+        <!-- Quick Search Trending Topic Pills -->
+        <div class="quick-search-section">
+          <div class="quick-search-label">Popular Searches</div>
+          <div class="quick-search-pills">
+            <button class="pill-btn" data-query="Lofi Hip Hop Radio">Lofi Hip Hop</button>
+            <button class="pill-btn" data-query="Coffee Shop Bossa Nova Jazz">Coffee Jazz</button>
+            <button class="pill-btn" data-query="Deep Focus Study Music">Deep Focus</button>
+            <button class="pill-btn" data-query="Rain Sounds for Sleep">Rain Ambience</button>
+            <button class="pill-btn" data-query="Synthwave Chill Beats">Synthwave</button>
+            <button class="pill-btn" data-query="Neuroscience Podcast">Podcasts</button>
+            <button class="pill-btn" data-query="Relaxing Piano Music">Piano Chill</button>
+            <button class="pill-btn" data-query="Chill Gaming Music">Gaming Beats</button>
+          </div>
+        </div>
+
+        <!-- Recent Searches Section -->
+        <div id="recent-searches-box" class="recent-searches-box" style="display: none;">
+          <div class="recent-header">
+            <span>Recent Searches</span>
+            <button id="btn-clear-recent" class="btn-text-action">Clear All</button>
+          </div>
+          <div id="recent-searches-list" class="recent-searches-chips"></div>
+        </div>
+      </div>
+
+      <!-- Live Search Status & Result Grid -->
       <div class="search-header-status">
         <h3 id="search-query-title" class="section-title">Search Results</h3>
         <span id="search-result-count" class="search-count"></span>
