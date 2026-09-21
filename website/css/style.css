@@ -1,20 +1,20 @@
 /* ==========================================================================
-   YouTube AdFree Web - Stylesheet (In-App Browser Edition)
-   Dark Theme (#0f0f0f), Safe Areas (Dynamic Island / Notch), Responsive Multi-Grid
+   YouTube Mobile (m.youtube.com) - Authentic Dark Theme Stylesheet
+   Safe Areas (Dynamic Island / Notch), Native YouTube Layout, Responsive Feeds
    ========================================================================== */
 
 :root {
-  --bg-color: #0f0f0f;
-  --surface-color: #181818;
-  --card-bg: #212121;
-  --card-hover: #282828;
-  --primary-accent: #ff0000;
-  --accent-blue: #3ea6ff;
-  --text-main: #ffffff;
-  --text-sub: #aaaaaa;
-  --border-color: rgba(255, 255, 255, 0.12);
-  --header-height: 54px;
-  --nav-height: 56px;
+  --yt-bg: #0f0f0f;
+  --yt-surface: #212121;
+  --yt-card-hover: #272727;
+  --yt-text-primary: #f1f1f1;
+  --yt-text-secondary: #aaaaaa;
+  --yt-red: #ff0000;
+  --yt-pill-bg: rgba(255, 255, 255, 0.1);
+  --yt-pill-active: #ffffff;
+  --yt-border: rgba(255, 255, 255, 0.12);
+  --header-height: 48px;
+  --nav-height: 48px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
@@ -28,22 +28,98 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-body {
-  background-color: var(--bg-color);
-  color: var(--text-main);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+body.yt-app {
+  background-color: var(--yt-bg);
+  color: var(--yt-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Roboto", "Segoe UI", Helvetica, Arial, sans-serif;
   line-height: 1.4;
   overflow-x: hidden;
-  padding-top: calc(var(--header-height) + var(--safe-top));
+  padding-top: calc(var(--header-height) + 44px + var(--safe-top)); /* Header + Chips */
   padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 16px);
   min-height: 100vh;
 }
 
 /* ==========================================================================
-   1. IN-APP BROWSER NAVIGATION BAR (Dynamic Island Aware)
+   1. DEFAULT YOUTUBE MOBILE HEADER (Dynamic Island Aware)
    ========================================================================== */
-.browser-navbar {
+.yt-header {
   position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--header-height) + var(--safe-top));
+  padding-top: var(--safe-top);
+  padding-left: calc(14px + var(--safe-left));
+  padding-right: calc(14px + var(--safe-right));
+  background-color: rgba(15, 15, 15, 0.98);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 1000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.yt-brand {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.yt-logo-svg {
+  width: 96px;
+  height: 22px;
+}
+
+.yt-header-icons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.yt-icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--yt-text-primary);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.yt-icon-btn:hover, .yt-icon-btn:active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.yt-icon-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
+.yt-avatar-circle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #5b2c91;
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* YouTube Mobile Search Overlay */
+.yt-search-overlay {
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
@@ -51,184 +127,181 @@ body {
   padding-top: var(--safe-top);
   padding-left: calc(8px + var(--safe-left));
   padding-right: calc(8px + var(--safe-right));
-  background-color: rgba(18, 18, 18, 0.96);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border-color);
+  background-color: var(--yt-bg);
   display: flex;
   align-items: center;
   gap: 6px;
-  z-index: 1000;
+  z-index: 1010;
 }
 
-.browser-nav-controls {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.nav-icon-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-main);
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.15s ease, opacity 0.15s ease, transform 0.1s ease;
-}
-
-.nav-icon-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.nav-icon-btn:active {
-  transform: scale(0.92);
-}
-
-.nav-icon-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.nav-icon-btn svg {
-  width: 20px;
-  height: 20px;
-  fill: currentColor;
-}
-
-/* Browser Address / Search Bar */
-.browser-address-box {
+.yt-search-bar-form {
   flex: 1;
   display: flex;
   align-items: center;
-  background: #242424;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #222222;
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 20px;
-  padding: 0 10px;
+  padding: 0 12px;
   height: 36px;
   gap: 6px;
-  min-width: 0;
-  transition: border-color 0.2s, background 0.2s;
 }
 
-.browser-address-box:focus-within {
-  border-color: var(--accent-blue);
-  background: #2b2b2b;
-}
-
-.security-lock {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.security-lock svg {
-  width: 14px;
-  height: 14px;
-  fill: #2ba640; /* HTTPS Verified Green */
-}
-
-.browser-address-input {
+.yt-search-bar-form input {
   flex: 1;
   background: transparent;
   border: none;
   outline: none;
   color: #ffffff;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   width: 100%;
-  min-width: 0;
 }
 
-.browser-address-input::placeholder {
-  color: rgba(255, 255, 255, 0.45);
+.yt-search-bar-form input::placeholder {
+  color: var(--yt-text-secondary);
 }
 
-.btn-clear {
+.yt-btn-clear {
   background: none;
   border: none;
-  color: var(--text-sub);
-  font-size: 1.1rem;
+  color: var(--yt-text-secondary);
+  font-size: 1.2rem;
   cursor: pointer;
   padding: 0 4px;
-  line-height: 1;
 }
 
-.btn-address-go {
-  background: var(--accent-blue);
-  color: #000000;
-  font-weight: 600;
-  font-size: 0.78rem;
-  border: none;
-  border-radius: 12px;
-  padding: 4px 10px;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: opacity 0.15s;
+.yt-suggestions-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #212121;
+  border-bottom: 1px solid var(--yt-border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: 1020;
 }
 
-.btn-address-go:active {
-  opacity: 0.8;
-}
-
-/* ==========================================================================
-   2. MAIN BROWSER VIEWPORT & TABS
-   ========================================================================== */
-.main-viewport {
-  width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
+.yt-suggestion-item {
   padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #f1f1f1;
+  font-size: 0.92rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-.browser-tab-view {
-  display: none;
-  animation: fadeIn 0.2s ease-in-out;
+.yt-suggestion-item:hover, .yt-suggestion-item:active {
+  background: rgba(255, 255, 255, 0.08);
 }
 
-.browser-tab-view.active {
-  display: block;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(3px); }
-  to { opacity: 1; transform: translateY(0); }
+.yt-suggestion-item svg {
+  width: 18px;
+  height: 18px;
+  fill: var(--yt-text-secondary);
+  flex-shrink: 0;
 }
 
 /* ==========================================================================
-   3. ACTIVE VIDEO PLAYER DOCK
+   2. DEFAULT YOUTUBE CATEGORY FILTER CHIPS
    ========================================================================== */
-.player-dock {
-  display: none;
-  margin-bottom: 20px;
-  transition: all 0.3s ease;
+.yt-chips-container {
+  position: fixed;
+  top: calc(var(--header-height) + var(--safe-top));
+  left: 0;
+  right: 0;
+  height: 44px;
+  background: rgba(15, 15, 15, 0.98);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 990;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.player-dock.active {
+.yt-chips-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 calc(12px + var(--safe-left));
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.yt-chips-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.yt-chip {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: var(--yt-text-primary);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.yt-chip.active {
+  background: #ffffff;
+  color: #0f0f0f;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   3. MAIN CONTENT CONTAINER & TAB VIEWS
+   ========================================================================== */
+.yt-main-content {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.yt-tab-view {
+  display: none;
+}
+
+.yt-tab-view.active {
   display: block;
 }
 
-.player-card {
-  background: var(--surface-color);
-  border-radius: 16px;
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
-  transition: all 0.3s ease;
+.yt-section-heading {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  letter-spacing: -0.3px;
+  color: var(--yt-text-primary);
 }
 
-.video-wrapper {
+.yt-meta-text {
+  font-size: 0.8rem;
+  color: var(--yt-text-secondary);
+}
+
+/* ==========================================================================
+   4. ACTIVE VIDEO WATCH VIEW (Default m.youtube.com Layout)
+   ========================================================================== */
+.yt-watch-section {
+  width: 100%;
+  background: #0f0f0f;
+  margin-bottom: 24px;
+}
+
+.yt-player-wrapper {
   position: relative;
   width: 100%;
-  padding-top: 56.25%; /* 16:9 Aspect Ratio */
+  aspect-ratio: 16 / 9;
   background: #000000;
 }
 
-.video-wrapper iframe,
-.video-wrapper #yt-player-container {
+.yt-player-wrapper iframe,
+.yt-player-wrapper #yt-player-container {
   position: absolute;
   top: 0;
   left: 0;
@@ -237,818 +310,206 @@ body {
   border: none;
 }
 
-/* Minimize button overlay on player */
-.btn-player-overlay-action {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  width: 32px;
-  height: 32px;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+/* Audio-Only Mode: collapse video frame */
+.yt-watch-section.audio-only-mode .yt-player-wrapper {
+  display: none;
+}
+
+.yt-watch-info {
+  padding: 12px 14px;
+}
+
+.yt-watch-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--yt-text-primary);
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.yt-watch-meta {
+  font-size: 0.78rem;
+  color: var(--yt-text-secondary);
+  margin-bottom: 12px;
+}
+
+/* Channel Subscribe Row */
+.yt-channel-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.yt-channel-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.yt-channel-avatar-circle {
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
+  background: #333333;
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.yt-channel-avatar-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.yt-channel-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.yt-channel-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--yt-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.yt-channel-subs {
+  font-size: 0.75rem;
+  color: var(--yt-text-secondary);
+}
+
+.yt-btn-subscribe {
+  background: #ffffff;
+  color: #0f0f0f;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 18px;
   cursor: pointer;
-  color: #ffffff;
-  z-index: 10;
-  transition: background 0.2s, transform 0.1s;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
 }
 
-.btn-player-overlay-action:active {
-  transform: scale(0.9);
+.yt-btn-subscribe.subscribed {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--yt-text-primary);
 }
 
-.btn-player-overlay-action svg {
+/* Action Capsule Pills */
+.yt-actions-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.yt-actions-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.yt-action-pill {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: var(--yt-text-primary);
+  padding: 6px 14px;
+  border-radius: 18px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.yt-action-pill:active {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.yt-action-pill.active {
+  background: rgba(255, 0, 0, 0.25);
+  color: #ff4e4e;
+}
+
+.yt-action-pill svg {
   width: 18px;
   height: 18px;
   fill: currentColor;
 }
 
-/* Audio-Only Mode: collapse video frame */
-.player-card.audio-only-mode .video-wrapper {
-  display: none;
-}
-
-.player-card.audio-only-mode {
-  background: linear-gradient(135deg, #1f1f1f, #121212);
-}
-
-.player-details {
-  padding: 16px;
-}
-
-.player-title-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.player-text-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.video-title {
-  font-size: 1.05rem;
-  font-weight: 600;
-  line-height: 1.35;
-  color: var(--text-main);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.video-channel {
-  font-size: 0.85rem;
-  color: var(--text-sub);
-  margin-top: 4px;
-}
-
-.btn-icon {
-  background: none;
-  border: none;
-  color: var(--text-sub);
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-
-.btn-icon svg {
-  width: 22px;
-  height: 22px;
-  fill: currentColor;
-}
-
-.btn-icon:hover {
-  color: var(--text-main);
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.btn-icon.favorited {
-  color: var(--primary-accent);
-}
-
-/* Custom Scrubber Bar */
-.scrubber-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 12px 0;
-}
-
-.scrubber {
-  flex: 1;
-  height: 4px;
-  -webkit-appearance: none;
-  appearance: none;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
-  outline: none;
-  cursor: pointer;
-}
-
-.scrubber::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--primary-accent);
-  cursor: pointer;
-  transition: transform 0.1s;
-}
-
-.scrubber::-webkit-slider-thumb:hover {
-  transform: scale(1.25);
-}
-
-.time-text {
-  font-size: 0.75rem;
-  color: var(--text-sub);
-  min-width: 38px;
-}
-
-/* Playback Control Buttons */
-.controls-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-  margin-top: 10px;
-}
-
-.btn-round {
+.yt-watch-divider {
+  height: 1px;
   background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-  border-radius: 50%;
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: transform 0.1s, background 0.2s;
-}
-
-.btn-round svg {
-  width: 22px;
-  height: 22px;
-  fill: currentColor;
-}
-
-.btn-round:active {
-  transform: scale(0.92);
-}
-
-.btn-round.play-main {
-  width: 54px;
-  height: 54px;
-  background: var(--primary-accent);
-  border: none;
-}
-
-.btn-round.play-main svg {
-  width: 26px;
-  height: 26px;
-}
-
-.btn-mode-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--border-color);
-  color: var(--text-sub);
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-mode-toggle svg {
-  width: 16px;
-  height: 16px;
-  fill: currentColor;
-}
-
-.btn-mode-toggle.active {
-  background: rgba(255, 0, 0, 0.2);
-  color: var(--primary-accent);
-  border-color: var(--primary-accent);
+  margin: 14px 0 16px 0;
 }
 
 /* ==========================================================================
-   4. FLOATING MINI-PLAYER BAR (When Video Dock is Minimized)
+   5. AUTHENTIC YOUTUBE FEED VIDEO CARDS
    ========================================================================== */
-.mini-player-bar {
-  position: fixed;
-  bottom: calc(var(--nav-height) + var(--safe-bottom) + 8px);
-  left: 12px;
-  right: 12px;
-  max-width: 600px;
-  margin: 0 auto;
-  background: rgba(33, 33, 33, 0.96);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+.yt-feed-list {
   display: flex;
-  align-items: center;
-  padding: 6px 12px;
-  gap: 12px;
-  z-index: 995;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media screen and (min-width: 768px) {
+  .yt-feed-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 0 14px;
+  }
+}
+
+@media screen and (min-width: 1100px) {
+  .yt-feed-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.yt-video-card {
+  display: flex;
+  flex-direction: column;
   cursor: pointer;
-  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-.mini-thumb {
-  width: 48px;
-  height: 36px;
-  object-fit: cover;
-  border-radius: 6px;
-  background: #000;
-  flex-shrink: 0;
-}
-
-.mini-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.mini-title {
-  font-size: 0.85rem;
-  font-weight: 600;
-  white-space: nowrap;
+.yt-thumbnail-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #111111;
   overflow: hidden;
-  text-overflow: ellipsis;
-  color: #ffffff;
-}
-
-.mini-channel {
-  font-size: 0.75rem;
-  color: var(--text-sub);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.mini-btn-play {
-  background: none;
-  border: none;
-  color: #ffffff;
-  cursor: pointer;
-  padding: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.mini-btn-play svg {
-  width: 22px;
-  height: 22px;
-  fill: currentColor;
-}
-
-.mini-btn-close {
-  background: none;
-  border: none;
-  color: var(--text-sub);
-  font-size: 1.4rem;
-  line-height: 1;
-  cursor: pointer;
-  padding: 4px 6px;
-}
-
-.mini-btn-close:hover {
-  color: #ffffff;
-}
-
-/* ==========================================================================
-   5. CATEGORY FILTER CHIPS
-   ========================================================================== */
-.category-scroll {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding: 4px 0 16px 0;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
-
-.category-scroll::-webkit-scrollbar {
-  display: none;
-}
-
-.chip {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-  padding: 6px 14px;
-  border-radius: 18px;
-  font-size: 0.82rem;
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background 0.2s, border-color 0.2s, color 0.2s;
-}
-
-.chip.active, .chip:hover {
-  background: #ffffff;
-  color: #0f0f0f;
-  border-color: #ffffff;
-}
-
-/* ==========================================================================
-   6. RESPONSIVE FEEDS GRID (Mobile 1-col, Tablet 2-3 col, Desktop 4-col)
-   ========================================================================== */
-.section-title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  margin-bottom: 14px;
-  letter-spacing: -0.3px;
-}
-
-.search-header-status {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-
-.search-count {
-  font-size: 0.85rem;
-  color: var(--text-sub);
-}
-
-.feeds-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
 }
 
 @media screen and (min-width: 600px) {
-  .feeds-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 18px;
+  .yt-thumbnail-wrapper {
+    border-radius: 12px;
   }
 }
 
-@media screen and (min-width: 900px) {
-  .feeds-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-  }
-}
-
-@media screen and (min-width: 1200px) {
-  .feeds-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-.video-card {
-  background: var(--surface-color);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.video-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-}
-
-.thumbnail-wrapper {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  background: #000000;
-}
-
-.thumbnail-wrapper img {
+.yt-thumbnail-wrapper img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.badge-category {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  background: rgba(0, 0, 0, 0.8);
-  font-size: 0.7rem;
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-weight: 600;
-}
-
-.play-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.video-card:hover .play-overlay {
-  opacity: 1;
-}
-
-.card-details {
-  padding: 12px;
-}
-
-.card-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  margin-bottom: 4px;
-}
-
-.card-channel {
-  font-size: 0.8rem;
-  color: var(--text-sub);
-}
-
-/* ==========================================================================
-   7. FAVORITES & HISTORY LIST
-   ========================================================================== */
-.list-container {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.list-item {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  background: var(--surface-color);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 10px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.list-item:hover {
-  background: var(--card-hover);
-}
-
-.list-thumb {
-  width: 96px;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-  border-radius: 6px;
-}
-
-.list-info {
-  flex: 1;
-  overflow: hidden;
-}
-
-.list-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 3px;
-}
-
-.list-channel {
-  font-size: 0.8rem;
-  color: var(--text-sub);
-}
-
-.empty-state {
-  color: var(--text-sub);
-  font-size: 0.9rem;
-  padding: 20px;
-  text-align: center;
-}
-
-/* ==========================================================================
-   8. FLOATING GO BACK BUTTON (Bottom Right Corner)
-   ========================================================================== */
-.floating-back-btn {
-  position: fixed;
-  bottom: calc(var(--nav-height) + var(--safe-bottom) + 16px);
-  right: calc(18px + var(--safe-right));
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: rgba(30, 30, 30, 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1.5px solid rgba(255, 255, 255, 0.25);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 998;
-  transition: transform 0.12s ease;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.floating-back-btn:active {
-  transform: scale(0.9);
-}
-
-.floating-back-btn svg {
-  width: 24px;
-  height: 24px;
-  stroke: #ffffff;
-  stroke-width: 2.8;
-  fill: none;
-}
-
-/* ==========================================================================
-   9. BOTTOM NAVIGATION BAR
-   ========================================================================== */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: calc(var(--nav-height) + var(--safe-bottom));
-  padding-bottom: var(--safe-bottom);
-  background: rgba(15, 15, 15, 0.96);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  z-index: 999;
-}
-
-.nav-tab-btn {
-  flex: 1;
-  background: none;
-  border: none;
-  color: var(--text-sub);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  height: 100%;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.nav-tab-btn.active {
-  color: var(--accent-blue);
-}
-
-.nav-tab-btn svg {
-  width: 22px;
-  height: 22px;
-  fill: currentColor;
-}
-
-/* ==========================================================================
-   10. SEARCH AUTOCOMPLETE SUGGESTIONS & SEARCH TAB STYLES
-   ========================================================================== */
-.browser-address-container {
-  position: relative;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.suggestions-dropdown {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  right: 0;
-  background: #222222;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75);
-  max-height: 280px;
-  overflow-y: auto;
-  z-index: 1100;
-}
-
-.suggestion-item {
-  padding: 10px 14px;
-  font-size: 0.88rem;
-  color: #f0f0f0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  transition: background 0.15s ease;
-}
-
-.suggestion-item:last-child {
-  border-bottom: none;
-}
-
-.suggestion-item:hover, .suggestion-item:active {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--accent-blue);
-}
-
-.suggestion-icon {
-  width: 16px;
-  height: 16px;
-  fill: var(--text-sub);
-  flex-shrink: 0;
-}
-
-.search-tab-header {
-  margin-bottom: 24px;
-}
-
-.tab-search-wrapper {
-  position: relative;
-  margin-bottom: 16px;
-}
-
-.tab-search-box {
-  display: flex;
-  align-items: center;
-  background: var(--surface-color);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 14px;
-  padding: 4px 6px 4px 14px;
-  gap: 10px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  transition: border-color 0.2s, background 0.2s;
-}
-
-.tab-search-box:focus-within {
-  border-color: var(--accent-blue);
-  background: #202020;
-}
-
-.search-box-icon {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.search-box-icon svg {
-  width: 20px;
-  height: 20px;
-  fill: var(--text-sub);
-}
-
-.tab-search-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: #ffffff;
-  font-size: 0.95rem;
-  padding: 8px 0;
-  min-width: 0;
-}
-
-.tab-search-input::placeholder {
-  color: rgba(255, 255, 255, 0.45);
-}
-
-.btn-search-action {
-  background: var(--accent-blue);
-  color: #000000;
-  font-weight: 600;
-  font-size: 0.88rem;
-  border: none;
-  border-radius: 10px;
-  padding: 8px 18px;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: opacity 0.15s;
-}
-
-.btn-search-action:active {
-  opacity: 0.8;
-}
-
-.quick-search-section {
-  margin-bottom: 16px;
-}
-
-.quick-search-label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-sub);
-  margin-bottom: 8px;
-  font-weight: 600;
-}
-
-.quick-search-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.pill-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-  padding: 6px 14px;
-  border-radius: 18px;
-  font-size: 0.82rem;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
-}
-
-.pill-btn:hover {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.pill-btn:active {
-  transform: scale(0.95);
-}
-
-.recent-searches-box {
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 12px;
-  padding: 12px 14px;
-  margin-bottom: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.recent-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.78rem;
-  color: var(--text-sub);
-  margin-bottom: 10px;
-  font-weight: 600;
-}
-
-.btn-text-action {
-  background: none;
-  border: none;
-  color: var(--accent-blue);
-  font-size: 0.75rem;
-  cursor: pointer;
-}
-
-.recent-searches-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.recent-chip {
-  background: #2a2a2a;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #ffffff;
-  font-size: 0.8rem;
-  padding: 5px 12px;
-  border-radius: 14px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: background 0.15s;
-}
-
-.recent-chip:hover {
-  background: #363636;
 }
 
 .badge-duration {
@@ -1061,30 +522,199 @@ body {
   font-weight: 600;
   padding: 2px 6px;
   border-radius: 4px;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
 }
 
-.search-loading-state {
+.yt-card-info {
+  display: flex;
+  gap: 12px;
+  padding: 10px 14px 4px 14px;
+}
+
+@media screen and (min-width: 600px) {
+  .yt-card-info {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+.yt-card-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #333333;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.yt-card-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.yt-card-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.yt-card-title {
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--yt-text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.yt-card-sub {
+  font-size: 0.78rem;
+  color: var(--yt-text-secondary);
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.yt-card-menu-btn {
+  background: none;
+  border: none;
+  color: var(--yt-text-secondary);
+  font-size: 1.1rem;
+  padding: 4px;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+/* ==========================================================================
+   6. LIBRARY / "YOU" VIEW
+   ========================================================================== */
+.yt-library-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 16px;
+}
+
+.yt-avatar-large {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #5b2c91;
+  color: #ffffff;
+  font-size: 1.2rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.yt-library-subheading {
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0 14px 10px 14px;
+  color: var(--yt-text-primary);
+}
+
+.yt-empty-state {
+  color: var(--yt-text-secondary);
+  font-size: 0.88rem;
+  padding: 24px 14px;
+  text-align: center;
+}
+
+/* ==========================================================================
+   7. FLOATING GO BACK BUTTON (Bottom Right Corner)
+   ========================================================================== */
+.floating-back-btn {
+  position: fixed;
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + 16px);
+  right: calc(16px + var(--safe-right));
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: rgba(33, 33, 33, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 998;
+  transition: transform 0.12s ease;
+}
+
+.floating-back-btn:active {
+  transform: scale(0.9);
+}
+
+.floating-back-btn svg {
+  width: 22px;
+  height: 22px;
+  stroke: #ffffff;
+  stroke-width: 2.8;
+  fill: none;
+}
+
+/* ==========================================================================
+   8. DEFAULT YOUTUBE MOBILE BOTTOM NAVIGATION BAR
+   ========================================================================== */
+.yt-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--nav-height) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: rgba(15, 15, 15, 0.98);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 999;
+}
+
+.yt-nav-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--yt-text-secondary);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 50px 16px;
-  gap: 14px;
-  color: var(--text-sub);
-  grid-column: 1 / -1;
+  gap: 3px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  height: 100%;
+  cursor: pointer;
+  transition: color 0.15s;
 }
 
-.search-spinner {
-  width: 36px;
-  height: 36px;
-  border: 3px solid rgba(255, 255, 255, 0.15);
-  border-top-color: var(--accent-blue);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+.yt-nav-btn.active {
+  color: #ffffff;
+  font-weight: 600;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+.yt-nav-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
 }
-

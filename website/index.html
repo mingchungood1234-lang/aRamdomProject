@@ -6,222 +6,193 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#0f0f0f" />
-  <title>YouTube Browser - Background Audio & Ad-Free</title>
+  <title>YouTube</title>
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
   <link rel="apple-touch-icon" href="icons/icon.svg" />
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body>
+<body class="yt-app">
 
   <!-- =========================================================================
-       1. IN-APP BROWSER NAVIGATION BAR (Top, Dynamic Island Safe Area Aware)
+       1. DEFAULT YOUTUBE MOBILE HEADER
        ========================================================================= -->
-  <header class="browser-navbar">
-    <div class="browser-nav-controls">
-      <!-- Back Button -->
-      <button id="btn-browser-back" class="nav-icon-btn" aria-label="Go Back">
-        <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg>
-      </button>
-
-      <!-- Forward Button -->
-      <button id="btn-browser-forward" class="nav-icon-btn" aria-label="Go Forward">
-        <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
-      </button>
-
-      <!-- Reload Button -->
-      <button id="btn-browser-reload" class="nav-icon-btn" aria-label="Reload">
-        <svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-      </button>
+  <header class="yt-header">
+    <!-- Left: YouTube Official Wordmark & Logo -->
+    <div class="yt-brand" onclick="window.app.goHome()">
+      <svg class="yt-logo-svg" viewBox="0 0 90 20" preserveAspectRatio="xMidYMid meet">
+        <g>
+          <path fill="#FF0000" d="M27.97 3.12A3.5 3.5 0 0 0 25.5.65C23.32.07 14.5.07 14.5.07s-8.82 0-11 .58A3.5 3.5 0 0 0 1.03 3.12C.45 5.3.45 9.85.45 9.85s0 4.55.58 6.73a3.5 3.5 0 0 0 2.47 2.47c2.18.58 11 .58 11 .58s8.82 0 11-.58a3.5 3.5 0 0 0 2.47-2.47c.58-2.18.58-6.73.58-6.73s0-4.55-.58-6.73z"/>
+          <polygon fill="#FFFFFF" points="11.69 14.07 19.19 9.85 11.69 5.62 11.69 14.07"/>
+          <text x="32" y="15" fill="#FFFFFF" font-family="-apple-system, Roboto, Helvetica, Arial" font-weight="700" font-size="14.5" letter-spacing="-0.8">YouTube</text>
+        </g>
+      </svg>
     </div>
 
-    <!-- Browser Address / Search Bar -->
-    <div class="browser-address-container">
-      <form id="browser-address-form" class="browser-address-box">
-        <span class="security-lock">
-          <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-        </span>
-        <input id="browser-address-input" type="text" class="browser-address-input" placeholder="Search YouTube or paste URL..." autocomplete="off" spellcheck="false" />
-        <button type="button" id="btn-clear-address" class="btn-clear" style="display: none;">&times;</button>
-        <button type="submit" class="btn-address-go">Go</button>
+    <!-- Right Header Controls: Search & Avatar -->
+    <div class="yt-header-icons">
+      <button id="btn-open-search" class="yt-icon-btn" aria-label="Search">
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 14z"/></svg>
+      </button>
+      <div class="yt-avatar-circle" onclick="window.app.switchView('library')">
+        <span>U</span>
+      </div>
+    </div>
+
+    <!-- YouTube Mobile Fullscreen Search Overlay -->
+    <div id="yt-search-overlay" class="yt-search-overlay" style="display: none;">
+      <button id="btn-close-search" class="yt-icon-btn" aria-label="Close search">
+        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      </button>
+      <form id="yt-search-form" class="yt-search-bar-form">
+        <input id="yt-search-input" type="text" placeholder="Search YouTube or paste link..." autocomplete="off" spellcheck="false" />
+        <button type="button" id="btn-clear-yt-search" class="yt-btn-clear" style="display: none;">&times;</button>
       </form>
-      <div id="address-suggestions" class="suggestions-dropdown" style="display: none;"></div>
-    </div>
+      <button id="btn-submit-search" class="yt-icon-btn" aria-label="Submit search">
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 14z"/></svg>
+      </button>
 
-    <!-- Home Button -->
-    <button id="btn-browser-home" class="nav-icon-btn" aria-label="Home">
-      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-    </button>
+      <!-- Autocomplete Dropdown List -->
+      <div id="yt-search-suggestions" class="yt-suggestions-list" style="display: none;"></div>
+    </div>
   </header>
 
   <!-- =========================================================================
-       2. MAIN CONTENT BROWSER VIEWPORT
+       2. DEFAULT YOUTUBE CATEGORY FILTER CHIPS
        ========================================================================= -->
-  <main class="main-viewport">
+  <nav class="yt-chips-container">
+    <div class="yt-chips-scroll">
+      <button class="yt-chip active" data-category="All">All</button>
+      <button class="yt-chip" data-category="Music">Music</button>
+      <button class="yt-chip" data-category="Lofi">Lofi & Beats</button>
+      <button class="yt-chip" data-category="Ambience">Ambience</button>
+      <button class="yt-chip" data-category="Focus">Study & Focus</button>
+      <button class="yt-chip" data-category="Podcasts">Podcasts</button>
+      <button class="yt-chip" data-category="Gaming">Gaming</button>
+      <button class="yt-chip" data-category="Live">Live</button>
+    </div>
+  </nav>
 
-    <!-- Active Video Player Dock (Can be Expanded or Minimized) -->
-    <section id="player-dock" class="player-dock">
-      <div id="player-card" class="player-card">
-        <!-- 16:9 Video Embed Frame -->
-        <div class="video-wrapper">
-          <div id="yt-player-container"></div>
-          <!-- Minimize to mini-player button -->
-          <button id="btn-minimize-player" class="btn-player-overlay-action" aria-label="Minimize Player" onclick="window.app.minimizePlayer()">
-            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+  <!-- =========================================================================
+       3. MAIN YOUTUBE APP CONTENT CONTAINER
+       ========================================================================= -->
+  <main class="yt-main-content">
+
+    <!-- ACTIVE VIDEO WATCH VIEW (Appears at top when video plays) -->
+    <section id="yt-watch-section" class="yt-watch-section" style="display: none;">
+      <!-- 16:9 Video Frame with Native YouTube Controls -->
+      <div class="yt-player-wrapper">
+        <div id="yt-player-container"></div>
+      </div>
+
+      <!-- Watch Details: Title, Channel, Actions (Default YouTube Layout) -->
+      <div class="yt-watch-info">
+        <h1 id="yt-video-title" class="yt-watch-title">Select a video to play</h1>
+        <div id="yt-video-views-date" class="yt-watch-meta">1.2M views • Background Play Active</div>
+
+        <!-- Channel Subscribe Row -->
+        <div class="yt-channel-bar">
+          <div class="yt-channel-left">
+            <div id="yt-channel-avatar" class="yt-channel-avatar-circle">YT</div>
+            <div class="yt-channel-text">
+              <span id="yt-channel-name" class="yt-channel-name">YouTube</span>
+              <span id="yt-channel-subs" class="yt-channel-subs">1.5M subscribers</span>
+            </div>
+          </div>
+          <button id="btn-subscribe" class="yt-btn-subscribe" onclick="window.app.toggleSubscribe()">Subscribe</button>
+        </div>
+
+        <!-- Action Pills: Like, Share, Background Audio, Save -->
+        <div class="yt-actions-scroll">
+          <button id="btn-like" class="yt-action-pill" onclick="window.app.toggleLike()">
+            <svg viewBox="0 0 24 24"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+            <span id="like-count-text">42K</span>
+          </button>
+
+          <button class="yt-action-pill" onclick="window.app.shareVideo()">
+            <svg viewBox="0 0 24 24"><path d="M14 9V5l7 7-7 7v-4.1c-5 0-8.5 1.6-11 5.1 1-5 4-10 11-11z"/></svg>
+            <span>Share</span>
+          </button>
+
+          <!-- Background Audio Stream Mode Button -->
+          <button id="btn-audio-only" class="yt-action-pill" onclick="window.playerManager.toggleAudioOnlyMode()">
+            <svg viewBox="0 0 24 24"><path d="M12 3v9.28a4.39 4.39 0 0 0-1.5-.28 4.5 4.5 0 1 0 4.5 4.5V6h4V3h-7z"/></svg>
+            <span id="audio-mode-label">Background Audio</span>
+          </button>
+
+          <button id="btn-favorite" class="yt-action-pill" onclick="window.app.toggleFavoriteCurrentVideo()">
+            <svg viewBox="0 0 24 24"><path d="M14 10H2v2h12v-2zm0-4H2v2h12V6zm4 8v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM2 16h8v-2H2v2z"/></svg>
+            <span>Save</span>
           </button>
         </div>
 
-        <!-- Full Player Controls & Metadata Bar -->
-        <div class="player-details">
-          <div class="player-title-row">
-            <div class="player-text-info">
-              <h2 id="current-video-title" class="video-title">Select a video to play</h2>
-              <p id="current-video-channel" class="video-channel">Background playback enabled</p>
-            </div>
-            <button id="btn-favorite" class="btn-icon" aria-label="Save to Favorites">
-              <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-            </button>
-          </div>
+        <div class="yt-watch-divider"></div>
 
-          <!-- Time Scrubber -->
-          <div class="scrubber-container">
-            <span id="time-current" class="time-text">0:00</span>
-            <input id="player-scrubber" type="range" class="scrubber" min="0" max="100" value="0" />
-            <span id="time-duration" class="time-text">0:00</span>
-          </div>
-
-          <!-- Playback Actions -->
-          <div class="controls-row">
-            <button class="btn-round" onclick="window.playerManager.seekRelative(-10)" aria-label="Rewind 10s">
-              <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
-            </button>
-
-            <button class="btn-round play-main icon-play-toggle" onclick="window.playerManager.togglePlay()" aria-label="Play/Pause">
-              <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-            </button>
-
-            <button class="btn-round" onclick="window.playerManager.seekRelative(10)" aria-label="Fast Forward 10s">
-              <svg viewBox="0 0 24 24"><path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/></svg>
-            </button>
-
-            <button id="btn-audio-only" class="btn-mode-toggle" aria-label="Toggle Audio Only">
-              <svg viewBox="0 0 24 24"><path d="M12 3v9.28a4.39 4.39 0 0 0-1.5-.28 4.5 4.5 0 1 0 4.5 4.5V6h4V3h-7z"/></svg>
-              <span>Audio Only</span>
-            </button>
-          </div>
-        </div>
+        <!-- Up Next Recommended Section -->
+        <h2 class="yt-section-heading">Up next</h2>
+        <div id="up-next-feed" class="yt-feed-list"></div>
       </div>
     </section>
 
-    <!-- Floating Mini Player Bar (When Minimized) -->
-    <div id="mini-player-bar" class="mini-player-bar" style="display: none;" onclick="window.app.expandPlayer()">
-      <img id="mini-player-thumb" class="mini-thumb" src="" alt="Thumbnail" />
-      <div class="mini-info">
-        <div id="mini-player-title" class="mini-title">Video title</div>
-        <div id="mini-player-channel" class="mini-channel">Channel</div>
+    <!-- VIEW 1: HOME FEED (Default YouTube Mobile Grid) -->
+    <div id="view-home" class="yt-tab-view active">
+      <div id="feeds-grid" class="yt-feed-list"></div>
+    </div>
+
+    <!-- VIEW 2: SEARCH RESULTS -->
+    <div id="view-search" class="yt-tab-view">
+      <div class="yt-search-results-header">
+        <h2 id="search-query-title" class="yt-section-heading">Search Results</h2>
+        <span id="search-result-count" class="yt-meta-text"></span>
       </div>
-      <button class="mini-btn-play icon-play-toggle" onclick="event.stopPropagation(); window.playerManager.togglePlay();">
-        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-      </button>
-      <button class="mini-btn-close" onclick="event.stopPropagation(); window.app.closePlayer();">
-        &times;
-      </button>
+      <div id="search-results-container" class="yt-feed-list"></div>
     </div>
 
-    <!-- Category Filter Chips -->
-    <div class="category-scroll">
-      <button class="chip active" data-category="All">All</button>
-      <button class="chip" data-category="Music">Music</button>
-      <button class="chip" data-category="Lofi">Lofi & Beats</button>
-      <button class="chip" data-category="Ambience">Ambience</button>
-      <button class="chip" data-category="Focus">Study & Focus</button>
-      <button class="chip" data-category="Podcasts">Podcasts</button>
+    <!-- VIEW 3: SUBSCRIPTIONS -->
+    <div id="view-subscriptions" class="yt-tab-view">
+      <h2 class="yt-section-heading" style="padding: 16px 16px 8px 16px;">Latest from subscriptions</h2>
+      <div id="subscriptions-feed" class="yt-feed-list"></div>
     </div>
 
-    <!-- BROWSER VIEW 1: HOME / DISCOVERY -->
-    <div id="view-home" class="browser-tab-view active">
-      <h3 class="section-title">Trending & Background Streams</h3>
-      <div id="feeds-grid" class="feeds-grid"></div>
-    </div>
-
-    <!-- BROWSER VIEW 2: SEARCH TAB -->
-    <div id="view-search" class="browser-tab-view">
-      <div class="search-tab-header">
-        <!-- Dedicated In-Tab Search Bar -->
-        <div class="tab-search-wrapper">
-          <form id="tab-search-form" class="tab-search-box">
-            <span class="search-box-icon">
-              <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 14z"/></svg>
-            </span>
-            <input id="tab-search-input" type="text" class="tab-search-input" placeholder="Search songs, artists, podcasts, or paste URL..." autocomplete="off" spellcheck="false" />
-            <button type="button" id="btn-tab-search-clear" class="btn-clear" style="display: none;">&times;</button>
-            <button type="submit" class="btn-search-action">Search</button>
-          </form>
-          <div id="tab-suggestions" class="suggestions-dropdown" style="display: none;"></div>
-        </div>
-
-        <!-- Quick Search Trending Topic Pills -->
-        <div class="quick-search-section">
-          <div class="quick-search-label">Popular Searches</div>
-          <div class="quick-search-pills">
-            <button class="pill-btn" data-query="Lofi Hip Hop Radio">Lofi Hip Hop</button>
-            <button class="pill-btn" data-query="Coffee Shop Bossa Nova Jazz">Coffee Jazz</button>
-            <button class="pill-btn" data-query="Deep Focus Study Music">Deep Focus</button>
-            <button class="pill-btn" data-query="Rain Sounds for Sleep">Rain Ambience</button>
-            <button class="pill-btn" data-query="Synthwave Chill Beats">Synthwave</button>
-            <button class="pill-btn" data-query="Neuroscience Podcast">Podcasts</button>
-            <button class="pill-btn" data-query="Relaxing Piano Music">Piano Chill</button>
-            <button class="pill-btn" data-query="Chill Gaming Music">Gaming Beats</button>
-          </div>
-        </div>
-
-        <!-- Recent Searches Section -->
-        <div id="recent-searches-box" class="recent-searches-box" style="display: none;">
-          <div class="recent-header">
-            <span>Recent Searches</span>
-            <button id="btn-clear-recent" class="btn-text-action">Clear All</button>
-          </div>
-          <div id="recent-searches-list" class="recent-searches-chips"></div>
+    <!-- VIEW 4: LIBRARY ("You") -->
+    <div id="view-library" class="yt-tab-view">
+      <div class="yt-library-header">
+        <div class="yt-avatar-large">U</div>
+        <div>
+          <h2 class="yt-section-heading" style="margin: 0;">You</h2>
+          <span class="yt-meta-text">Saved Videos & Playback History</span>
         </div>
       </div>
 
-      <!-- Live Search Status & Result Grid -->
-      <div class="search-header-status">
-        <h3 id="search-query-title" class="section-title">Search Results</h3>
-        <span id="search-result-count" class="search-count"></span>
-      </div>
-      <div id="search-results-container" class="feeds-grid"></div>
-    </div>
+      <h3 class="yt-library-subheading">Favorites</h3>
+      <div id="favorites-list" class="yt-feed-list"></div>
 
-    <!-- BROWSER VIEW 3: LIBRARY (Favorites & History) -->
-    <div id="view-library" class="browser-tab-view">
-      <h3 class="section-title">Favorite Videos</h3>
-      <div id="favorites-list" class="list-container"></div>
-
-      <h3 class="section-title" style="margin-top: 28px;">Recently Played</h3>
-      <div id="history-list" class="list-container"></div>
+      <h3 class="yt-library-subheading" style="margin-top: 24px;">History</h3>
+      <div id="history-list" class="yt-feed-list"></div>
     </div>
 
   </main>
 
-  <!-- Floating Go Back Button (Bottom Right) -->
-  <button id="floating-back-btn" class="floating-back-btn" aria-label="Go Back (Hold to Refresh)">
+  <!-- Floating Go Back Button (Bottom Right Corner) -->
+  <button id="floating-back-btn" class="floating-back-btn" aria-label="Go Back">
     <svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
   </button>
 
-  <!-- Bottom Browser Navigation Tabs -->
-  <nav class="bottom-nav">
-    <button class="nav-tab-btn active" data-view="home">
+  <!-- =========================================================================
+       4. DEFAULT YOUTUBE MOBILE BOTTOM NAVIGATION BAR
+       ========================================================================= -->
+  <nav class="yt-bottom-nav">
+    <button class="yt-nav-btn active" data-view="home">
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-      <span>Browse</span>
+      <span>Home</span>
     </button>
-    <button class="nav-tab-btn" data-view="search">
-      <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-      <span>Search</span>
-    </button>
-    <button class="nav-tab-btn" data-view="library">
+    <button class="yt-nav-btn" data-view="subscriptions">
       <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/></svg>
-      <span>Library</span>
+      <span>Subscriptions</span>
+    </button>
+    <button class="yt-nav-btn" data-view="library">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+      <span>You</span>
     </button>
   </nav>
 

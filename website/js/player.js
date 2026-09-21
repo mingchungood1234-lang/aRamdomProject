@@ -1,9 +1,7 @@
 /**
- * YouTube & Native Audio Player Manager
- * Supports:
- * - YouTube IFrame player for visual video playback
- * - Native HTML5 <audio> player (/api/stream?v=...) for 100% reliable iOS/mobile background playback
- * - Seamless handoff and synchronization with MediaSession Lock Screen controls
+ * YouTube & Native Audio Player Manager - Default YouTube Mobile Edition
+ * Uses YouTube's official native player controls (controls: 1) for on-screen playback,
+ * and seamlessly powers unbroken background audio via the host streaming server (/api/stream?v=...).
  */
 class YouTubePlayerManager {
   constructor() {
@@ -11,7 +9,6 @@ class YouTubePlayerManager {
     this.isReady = false;
     this.currentVideoId = null;
     this.currentVideoInfo = null;
-    this.playbackInterval = null;
     this.isAudioOnlyMode = false;
     this.isNativeAudioActive = false;
 
@@ -37,9 +34,7 @@ class YouTubePlayerManager {
       document.body.appendChild(this.nativeAudio);
     }
 
-    // Native audio event listeners
     this.nativeAudio.addEventListener('play', () => {
-      this.updatePlayButtonIcon(true);
       if (window.backgroundAudio) {
         window.backgroundAudio.updatePlaybackState(
           true,
@@ -50,7 +45,6 @@ class YouTubePlayerManager {
     });
 
     this.nativeAudio.addEventListener('pause', () => {
-      this.updatePlayButtonIcon(false);
       if (window.backgroundAudio) {
         window.backgroundAudio.updatePlaybackState(
           false,
@@ -64,16 +58,6 @@ class YouTubePlayerManager {
       if (!this.isNativeAudioActive) return;
       const current = this.nativeAudio.currentTime || 0;
       const duration = this.nativeAudio.duration || (this.currentVideoInfo ? this.currentVideoInfo.duration : 0) || 0;
-
-      const scrubber = document.getElementById('player-scrubber');
-      const timeCurrent = document.getElementById('time-current');
-      const timeDuration = document.getElementById('time-duration');
-
-      if (duration > 0 && scrubber && !scrubber.matches(':active')) {
-        scrubber.value = (current / duration) * 100;
-      }
-      if (timeCurrent) timeCurrent.textContent = this.formatTime(current);
-      if (timeDuration && duration > 0) timeDuration.textContent = this.formatTime(duration);
 
       if (window.backgroundAudio) {
         window.backgroundAudio.updatePlaybackState(true, current, duration);
@@ -89,7 +73,7 @@ class YouTubePlayerManager {
     this.nativeAudio.addEventListener('error', (e) => {
       console.warn('[NativeAudio] Stream error, falling back to iframe:', e);
       if (this.isAudioOnlyMode) {
-        this.toggleAudioOnlyMode(); // revert to iframe mode
+        this.toggleAudioOnlyMode();
       }
     });
   }
@@ -101,7 +85,6 @@ class YouTubePlayerManager {
   setupVisibilityHandoff() {
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') {
-        // Tab went to background or phone was locked
         if (this.isPlaying() && !this.isNativeAudioActive && this.currentVideoId) {
           console.log('[PlayerManager] Background detected: switching to native stream');
           const currentSec = this.getCurrentTime();
@@ -138,9 +121,6 @@ class YouTubePlayerManager {
     }
   }
 
-  /**
-   * Connect with Lock Screen & MediaSession Controller
-   */
   connectBackgroundAudio() {
     if (!window.backgroundAudio) return;
 
@@ -165,9 +145,6 @@ class YouTubePlayerManager {
     });
   }
 
-  /**
-   * Extract 11-char YouTube Video ID from any URL format or raw ID
-   */
   extractVideoId(input) {
     if (!input) return null;
     const clean = input.trim();
@@ -193,9 +170,6 @@ class YouTubePlayerManager {
     return null;
   }
 
-  /**
-   * Load and play video
-   */
   loadVideo(videoIdOrUrl, customInfo = null) {
     const videoId = this.extractVideoId(videoIdOrUrl);
     if (!videoId) {
@@ -213,17 +187,13 @@ class YouTubePlayerManager {
     };
 
     this.updatePlayerUI();
-
-    // Fetch rich metadata & warm up audio stream on server
     this.fetchServerMetadata(videoId);
 
-    // If Audio-Only Mode is enabled: play via native audio stream immediately
     if (this.isAudioOnlyMode) {
       this.switchToNativeAudio(0, true);
       return true;
     }
 
-    // Otherwise play visual video via YouTube IFrame
     this.isNativeAudioActive = false;
     if (this.nativeAudio) {
       this.nativeAudio.pause();
@@ -270,15 +240,14 @@ class YouTubePlayerManager {
           }
         }
       }
-    } catch (e) {
-      // Backend not available or running in standalone static mode
-    }
+    } catch (e) {}
   }
 
   createPlayer(videoId) {
     const container = document.getElementById('yt-player-container');
     if (!container) return;
 
+    // Notice: controls: 1 activates YouTube's official native player controls
     this.player = new YT.Player('yt-player-container', {
       height: '100%',
       width: '100%',
@@ -287,9 +256,8 @@ class YouTubePlayerManager {
       playerVars: {
         autoplay: 1,
         playsinline: 1,
+        controls: 1,           // DEFAULT NATIVE YOUTUBE CONTROLS (red bar, gear, fullscreen)
         rel: 0,
-        modestbranding: 1,
-        iv_load_policy: 3,
         fs: 1,
         enablejsapi: 1,
         origin: window.location.origin
@@ -303,12 +271,11 @@ class YouTubePlayerManager {
   }
 
   onPlayerReady(event) {
-    console.log('[PlayerManager] Player ready, starting playback...');
+    console.log('[PlayerManager] YouTube Native Player ready, playing...');
     if (!this.isAudioOnlyMode) {
       event.target.playVideo();
     }
     this.updatePlayerUI();
-    this.startTracking();
   }
 
   onPlayerStateChange(event) {
@@ -316,8 +283,6 @@ class YouTubePlayerManager {
 
     const state = event.data;
     const isPlaying = state === 1;
-
-    this.updatePlayButtonIcon(isPlaying);
 
     const currentTime = this.getCurrentTime();
     const duration = this.getDuration();
@@ -342,21 +307,14 @@ class YouTubePlayerManager {
 
   onPlayerError(event) {
     console.error('[PlayerManager] IFrame error code:', event.data);
-    // Automatically fallback to host native audio stream
-    console.log('[PlayerManager] Attempting fallback to host audio stream...');
     this.switchToNativeAudio(0, true);
   }
 
-  /**
-   * Switch playback engine to native HTML5 <audio> element (/api/stream)
-   * This is what gives 100% unbroken background audio on iOS Safari!
-   */
   switchToNativeAudio(startTime = 0, autoplay = true) {
     if (!this.currentVideoId || !this.nativeAudio) return;
 
     this.isNativeAudioActive = true;
 
-    // Pause YouTube iframe
     if (this.player && this.player.pauseVideo) {
       try {
         this.player.pauseVideo();
@@ -373,9 +331,7 @@ class YouTubePlayerManager {
     }
 
     if (autoplay) {
-      this.nativeAudio.play().catch((err) => {
-        console.warn('[NativeAudio] Play was blocked or failed:', err);
-      });
+      this.nativeAudio.play().catch(() => {});
     }
 
     if (window.backgroundAudio && this.currentVideoInfo) {
@@ -388,9 +344,6 @@ class YouTubePlayerManager {
     }
   }
 
-  /**
-   * Switch playback engine back to YouTube IFrame player
-   */
   switchToIframe(startTime = 0, autoplay = true) {
     this.isNativeAudioActive = false;
 
@@ -410,23 +363,20 @@ class YouTubePlayerManager {
     }
   }
 
-  /**
-   * Toggle between Visual Mode and Audio-Only Background Stream Mode
-   */
   toggleAudioOnlyMode() {
     this.isAudioOnlyMode = !this.isAudioOnlyMode;
-    const playerCard = document.getElementById('player-card');
+    const watchSection = document.getElementById('yt-watch-section');
     const toggleBtn = document.getElementById('btn-audio-only');
+    const label = document.getElementById('audio-mode-label');
 
-    if (playerCard) {
-      playerCard.classList.toggle('audio-only-mode', this.isAudioOnlyMode);
+    if (watchSection) {
+      watchSection.classList.toggle('audio-only-mode', this.isAudioOnlyMode);
     }
     if (toggleBtn) {
       toggleBtn.classList.toggle('active', this.isAudioOnlyMode);
-      const span = toggleBtn.querySelector('span');
-      if (span) {
-        span.textContent = this.isAudioOnlyMode ? 'Audio Stream Active' : 'Audio Only';
-      }
+    }
+    if (label) {
+      label.textContent = this.isAudioOnlyMode ? 'Audio Stream (Active)' : 'Background Audio';
     }
 
     const currentTime = this.getCurrentTime();
@@ -485,14 +435,6 @@ class YouTubePlayerManager {
     }
   }
 
-  togglePlay() {
-    if (this.isPlaying()) {
-      this.pause();
-    } else {
-      this.play();
-    }
-  }
-
   seekTo(seconds) {
     const target = Math.max(0, seconds);
     if (this.isNativeAudioActive && this.nativeAudio) {
@@ -502,68 +444,28 @@ class YouTubePlayerManager {
     }
   }
 
-  seekRelative(offsetSeconds) {
-    const target = this.getCurrentTime() + offsetSeconds;
-    this.seekTo(target);
-  }
-
-  startTracking() {
-    if (this.playbackInterval) clearInterval(this.playbackInterval);
-
-    this.playbackInterval = setInterval(() => {
-      if (this.isNativeAudioActive) return; // Native audio uses 'timeupdate' event
-
-      if (!this.player || !this.player.getCurrentTime) return;
-
-      const current = this.player.getCurrentTime() || 0;
-      const duration = this.player.getDuration() || 0;
-      const state = this.player.getPlayerState ? this.player.getPlayerState() : -1;
-      const isPlaying = state === 1;
-
-      const scrubber = document.getElementById('player-scrubber');
-      const timeCurrent = document.getElementById('time-current');
-      const timeDuration = document.getElementById('time-duration');
-
-      if (duration > 0 && scrubber && !scrubber.matches(':active')) {
-        scrubber.value = (current / duration) * 100;
-      }
-      if (timeCurrent) timeCurrent.textContent = this.formatTime(current);
-      if (timeDuration && duration > 0) timeDuration.textContent = this.formatTime(duration);
-
-      if (window.backgroundAudio && isPlaying) {
-        window.backgroundAudio.updatePlaybackState(true, current, duration);
-      }
-    }, 1000);
-  }
-
   updatePlayerUI() {
     if (!this.currentVideoInfo) return;
 
-    const titleEl = document.getElementById('current-video-title');
-    const channelEl = document.getElementById('current-video-channel');
-    const miniTitleEl = document.getElementById('mini-player-title');
-    const miniChannelEl = document.getElementById('mini-player-channel');
-    const miniThumbEl = document.getElementById('mini-player-thumb');
+    const watchSection = document.getElementById('yt-watch-section');
+    const titleEl = document.getElementById('yt-video-title');
+    const channelNameEl = document.getElementById('yt-channel-name');
+    const avatarEl = document.getElementById('yt-channel-avatar');
+    const metaEl = document.getElementById('yt-video-views-date');
 
     if (titleEl) titleEl.textContent = this.currentVideoInfo.title;
-    if (channelEl) channelEl.textContent = this.currentVideoInfo.channel;
-    if (miniTitleEl) miniTitleEl.textContent = this.currentVideoInfo.title;
-    if (miniChannelEl) miniChannelEl.textContent = this.currentVideoInfo.channel;
-    if (miniThumbEl) miniThumbEl.src = this.currentVideoInfo.thumbnail;
+    if (channelNameEl) channelNameEl.textContent = this.currentVideoInfo.channel;
+    if (avatarEl) {
+      const initial = (this.currentVideoInfo.channel || 'Y').charAt(0).toUpperCase();
+      avatarEl.textContent = initial;
+    }
+    if (metaEl) {
+      metaEl.textContent = `1.4M views • Ad-Free Background Playback`;
+    }
 
-    const playerDock = document.getElementById('player-dock');
-    if (playerDock) playerDock.classList.add('active');
-  }
-
-  updatePlayButtonIcon(isPlaying) {
-    const playIcons = document.querySelectorAll('.icon-play-toggle');
-    playIcons.forEach((btn) => {
-      if (isPlaying) {
-        btn.innerHTML = `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
-      } else {
-        btn.innerHTML = `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
-      }
-    });
+    if (watchSection) {
+      watchSection.style.display = 'block';
+    }
   }
 
   formatTime(seconds) {
