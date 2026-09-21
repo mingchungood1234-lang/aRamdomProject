@@ -108,9 +108,33 @@ def search_youtube(query, max_results=16):
             })
         return results
 
+def is_client_disconnect(e):
+    """Check if exception was caused by client closing the connection (normal during audio seeking/buffering)."""
+    if isinstance(e, (ConnectionResetError, ConnectionAbortedError, BrokenPipeError)):
+        return True
+    if isinstance(e, OSError):
+        # 10053: WSAECONNABORTED (Windows socket aborted by client browser)
+        # 10054: WSAECONNRESET (Windows connection reset)
+        # 32: EPIPE, 104: ECONNRESET
+        if getattr(e, 'winerror', None) in (10053, 10054):
+            return True
+        if getattr(e, 'errno', None) in (32, 104, 10053, 10054):
+            return True
+        err_str = str(e).lower()
+        if '10053' in err_str or '10054' in err_str or 'aborted' in err_str or 'broken pipe' in err_str:
+            return True
+    return False
+
 class StreamingHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=WEB_DIR, **kwargs)
+
+    def handle_one_request(self):
+        try:
+            super().handle_one_request()
+        except Exception as e:
+            if not is_client_disconnect(e):
+                raise
 
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
@@ -138,7 +162,11 @@ class StreamingHandler(SimpleHTTPRequestHandler):
             return
 
         # 4. Static Files
-        super().do_GET()
+        try:
+            super().do_GET()
+        except Exception as e:
+            if not is_client_disconnect(e):
+                raise
 
     def handle_api_info(self, params):
         vid = params.get('v', [None])[0]
@@ -222,14 +250,19 @@ class StreamingHandler(SimpleHTTPRequestHandler):
                 # Stream chunks directly to client
                 chunk_size = 64 * 1024
                 while True:
-                    chunk = upstream_resp.read(chunk_size)
-                    if not chunk:
-                        break
                     try:
+                        chunk = upstream_resp.read(chunk_size)
+                        if not chunk:
+                            break
                         self.wfile.write(chunk)
-                    except (BrokenPipeError, ConnectionResetError):
-                        break
+                    except Exception as write_err:
+                        if is_client_disconnect(write_err):
+                            break
+                        raise write_err
         except Exception as e:
+            if is_client_disconnect(e):
+                # Normal client disconnect (e.g. user scrubbed, paused, or closed tab)
+                return
             if not self.wfile.closed:
                 try:
                     self.send_error(HTTPStatus.INTERNAL_SERVER_ERROR, str(e))
@@ -248,6 +281,13 @@ class StreamingHandler(SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
         # Concise logging
         sys.stderr.write(f"[{self.log_date_time_string()}] {format % args}\n")
+
+    def log_error(self, format, *args):
+        # Suppress normal client disconnect noise (e.g. user scrubbed or closed audio stream)
+        msg = format % args
+        if '10053' in msg or '10054' in msg or 'aborted' in msg.lower() or 'broken pipe' in msg.lower():
+            return
+        super().log_error(format, *args)
 
 def run(port=3000):
     server_address = ('0.0.0.0', port)
