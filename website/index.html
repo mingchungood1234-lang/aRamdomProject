@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#0f0f0f" />
-  <title>YouTube AdFree - Background Audio Web</title>
+  <title>YouTube Browser - Background Audio & Ad-Free</title>
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
   <link rel="apple-touch-icon" href="icons/icon.svg" />
   <link rel="manifest" href="manifest.json" />
@@ -14,47 +14,69 @@
 </head>
 <body>
 
-  <!-- Top App Header (Dynamic Island & Notch Safe Area Aware) -->
-  <header class="app-header">
-    <a href="#" class="brand" onclick="window.app.switchView('home'); return false;">
-      <svg class="brand-icon" viewBox="0 0 24 24">
-        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-      </svg>
-      <span class="brand-title">YT AdFree</span>
-      <span class="brand-badge">Background</span>
-    </a>
+  <!-- =========================================================================
+       1. IN-APP BROWSER NAVIGATION BAR (Top, Dynamic Island Safe Area Aware)
+       ========================================================================= -->
+  <header class="browser-navbar">
+    <div class="browser-nav-controls">
+      <!-- Back Button -->
+      <button id="btn-browser-back" class="nav-icon-btn" aria-label="Go Back">
+        <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg>
+      </button>
 
-    <button class="btn-icon" aria-label="Audio Mode" onclick="window.playerManager.toggleAudioOnlyMode()">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M9 18V5l12-2v13"/>
-        <circle cx="6" cy="18" r="3"/>
-        <circle cx="18" cy="16" r="3"/>
-      </svg>
+      <!-- Forward Button -->
+      <button id="btn-browser-forward" class="nav-icon-btn" aria-label="Go Forward">
+        <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+      </button>
+
+      <!-- Reload Button -->
+      <button id="btn-browser-reload" class="nav-icon-btn" aria-label="Reload">
+        <svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+      </button>
+    </div>
+
+    <!-- Browser Address / Search Bar -->
+    <form id="browser-address-form" class="browser-address-box">
+      <span class="security-lock">
+        <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+      </span>
+      <input id="browser-address-input" type="text" class="browser-address-input" placeholder="Search YouTube or paste URL..." autocomplete="off" spellcheck="false" />
+      <button type="button" id="btn-clear-address" class="btn-clear" style="display: none;">&times;</button>
+      <button type="submit" class="btn-address-go">Go</button>
+    </form>
+
+    <!-- Home Button -->
+    <button id="btn-browser-home" class="nav-icon-btn" aria-label="Home">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
     </button>
   </header>
 
-  <!-- Main Content Layout -->
-  <main class="main-container">
+  <!-- =========================================================================
+       2. MAIN CONTENT BROWSER VIEWPORT
+       ========================================================================= -->
+  <main class="main-viewport">
 
-    <!-- Active Video / Audio Player Section -->
-    <section id="player-section" class="player-section">
+    <!-- Active Video Player Dock (Can be Expanded or Minimized) -->
+    <section id="player-dock" class="player-dock">
       <div id="player-card" class="player-card">
         <!-- 16:9 Video Embed Frame -->
         <div class="video-wrapper">
           <div id="yt-player-container"></div>
+          <!-- Minimize to mini-player button -->
+          <button id="btn-minimize-player" class="btn-player-overlay-action" aria-label="Minimize Player" onclick="window.app.minimizePlayer()">
+            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </button>
         </div>
 
-        <!-- Player Controls & Metadata Bar -->
-        <div class="player-info">
+        <!-- Full Player Controls & Metadata Bar -->
+        <div class="player-details">
           <div class="player-title-row">
-            <div>
+            <div class="player-text-info">
               <h2 id="current-video-title" class="video-title">Select a video to play</h2>
               <p id="current-video-channel" class="video-channel">Background playback enabled</p>
             </div>
-            <button id="btn-favorite" class="btn-icon" aria-label="Favorite">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-              </svg>
+            <button id="btn-favorite" class="btn-icon" aria-label="Save to Favorites">
+              <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
             </button>
           </div>
 
@@ -65,34 +87,22 @@
             <span id="time-duration" class="time-text">0:00</span>
           </div>
 
-          <!-- Action Buttons -->
+          <!-- Playback Actions -->
           <div class="controls-row">
-            <!-- Rewind 10s -->
             <button class="btn-round" onclick="window.playerManager.seekRelative(-10)" aria-label="Rewind 10s">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
-              </svg>
+              <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
             </button>
 
-            <!-- Main Play/Pause Toggle -->
             <button class="btn-round play-main icon-play-toggle" onclick="window.playerManager.togglePlay()" aria-label="Play/Pause">
-              <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
+              <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             </button>
 
-            <!-- Fast-Forward 10s -->
             <button class="btn-round" onclick="window.playerManager.seekRelative(10)" aria-label="Fast Forward 10s">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/>
-              </svg>
+              <svg viewBox="0 0 24 24"><path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/></svg>
             </button>
 
-            <!-- Audio-Only Mini Toggle -->
             <button id="btn-audio-only" class="btn-mode-toggle" aria-label="Toggle Audio Only">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                <path d="M12 3v9.28a4.39 4.39 0 0 0-1.5-.28 4.5 4.5 0 1 0 4.5 4.5V6h4V3h-7z"/>
-              </svg>
+              <svg viewBox="0 0 24 24"><path d="M12 3v9.28a4.39 4.39 0 0 0-1.5-.28 4.5 4.5 0 1 0 4.5 4.5V6h4V3h-7z"/></svg>
               <span>Audio Only</span>
             </button>
           </div>
@@ -100,75 +110,67 @@
       </div>
     </section>
 
-    <!-- VIEW 1: HOME (Curated Background Audio & Trending Streams) -->
-    <div id="view-home" class="app-view active">
-      <!-- Search or Paste URL Card -->
-      <section class="search-card">
-        <label for="input-url" class="search-label">Paste any YouTube URL or Video ID:</label>
-        <form id="search-form" class="search-form">
-          <input id="input-url" type="text" class="search-input" placeholder="e.g. youtu.be/jfKfPfyJRdk or song title..." autocomplete="off" />
-          <button type="submit" class="search-btn">Play</button>
-        </form>
-      </section>
-
-      <!-- Feeds Grid -->
-      <section>
-        <h3 class="section-title">Background Audio Streams</h3>
-        <div id="feeds-grid" class="feeds-grid"></div>
-      </section>
+    <!-- Floating Mini Player Bar (When Minimized) -->
+    <div id="mini-player-bar" class="mini-player-bar" style="display: none;" onclick="window.app.expandPlayer()">
+      <img id="mini-player-thumb" class="mini-thumb" src="" alt="Thumbnail" />
+      <div class="mini-info">
+        <div id="mini-player-title" class="mini-title">Video title</div>
+        <div id="mini-player-channel" class="mini-channel">Channel</div>
+      </div>
+      <button class="mini-btn-play icon-play-toggle" onclick="event.stopPropagation(); window.playerManager.togglePlay();">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <button class="mini-btn-close" onclick="event.stopPropagation(); window.app.closePlayer();">
+        &times;
+      </button>
     </div>
 
-    <!-- VIEW 2: SEARCH / PASTE VIEW -->
-    <div id="view-search" class="app-view">
-      <section class="search-card">
-        <h3 class="section-title">Load Any Video</h3>
-        <p style="color: var(--text-sub); font-size: 0.9rem; margin-bottom: 14px;">
-          Paste a link from YouTube (Desktop, Mobile, or Shorts). The video will load ad-free and stream audio in the background on your lock screen.
-        </p>
-        <form class="search-form" onsubmit="event.preventDefault(); const v = document.getElementById('search-view-input').value; window.app.playVideo({ id: window.playerManager.extractVideoId(v) || v, title: 'YouTube Video', channel: 'YouTube', thumbnail: '' });">
-          <input id="search-view-input" type="text" class="search-input" placeholder="https://www.youtube.com/watch?v=..." />
-          <button type="submit" class="search-btn">Load</button>
-        </form>
-      </section>
-
-      <section style="background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 14px; padding: 18px; margin-top: 16px;">
-        <h4 style="margin-bottom: 8px; font-size: 1rem;">How Background Audio Works:</h4>
-        <ul style="color: var(--text-sub); font-size: 0.88rem; line-height: 1.6; padding-left: 20px;">
-          <li>Start playback on any video.</li>
-          <li>Lock your iPhone or switch to another app.</li>
-          <li>If playback pauses, simply tap <strong>Play</strong> on your iOS Lock Screen or Control Center widget.</li>
-          <li>Use the <strong>Audio Only</strong> button above to hide the video frame and conserve battery.</li>
-        </ul>
-      </section>
+    <!-- Category Filter Chips -->
+    <div class="category-scroll">
+      <button class="chip active" data-category="All">All</button>
+      <button class="chip" data-category="Music">Music</button>
+      <button class="chip" data-category="Lofi">Lofi & Beats</button>
+      <button class="chip" data-category="Ambience">Ambience</button>
+      <button class="chip" data-category="Focus">Study & Focus</button>
+      <button class="chip" data-category="Podcasts">Podcasts</button>
     </div>
 
-    <!-- VIEW 3: LIBRARY (Favorites & History) -->
-    <div id="view-library" class="app-view">
-      <section>
-        <h3 class="section-title">Favorite Videos</h3>
-        <div id="favorites-list" class="list-container"></div>
-      </section>
+    <!-- BROWSER VIEW 1: HOME / DISCOVERY -->
+    <div id="view-home" class="browser-tab-view active">
+      <h3 class="section-title">Trending & Background Streams</h3>
+      <div id="feeds-grid" class="feeds-grid"></div>
+    </div>
 
-      <section style="margin-top: 24px;">
-        <h3 class="section-title">Recently Played</h3>
-        <div id="history-list" class="list-container"></div>
-      </section>
+    <!-- BROWSER VIEW 2: SEARCH RESULTS -->
+    <div id="view-search" class="browser-tab-view">
+      <div class="search-header-status">
+        <h3 id="search-query-title" class="section-title">Search Results</h3>
+        <span id="search-result-count" class="search-count"></span>
+      </div>
+      <div id="search-results-container" class="feeds-grid"></div>
+    </div>
+
+    <!-- BROWSER VIEW 3: LIBRARY (Favorites & History) -->
+    <div id="view-library" class="browser-tab-view">
+      <h3 class="section-title">Favorite Videos</h3>
+      <div id="favorites-list" class="list-container"></div>
+
+      <h3 class="section-title" style="margin-top: 28px;">Recently Played</h3>
+      <div id="history-list" class="list-container"></div>
     </div>
 
   </main>
 
-  <!-- Floating Go Back Button (Bottom Right Corner) -->
+  <!-- Floating Go Back Button (Bottom Right) -->
   <button id="floating-back-btn" class="floating-back-btn" aria-label="Go Back (Hold to Refresh)">
-    <svg viewBox="0 0 24 24">
-      <path d="M15 19l-7-7 7-7"/>
-    </svg>
+    <svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
   </button>
 
-  <!-- Bottom Tab Navigation Bar -->
+  <!-- Bottom Browser Navigation Tabs -->
   <nav class="bottom-nav">
     <button class="nav-tab-btn active" data-view="home">
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-      <span>Home</span>
+      <span>Browse</span>
     </button>
     <button class="nav-tab-btn" data-view="search">
       <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>

@@ -1,15 +1,22 @@
 /**
- * Main Web App Controller
- * Handles UI views, search/URL submission, curated feed, favorites, and history
+ * Main Web App Controller - In-App Browser Edition
+ * Handles:
+ * - In-app browser history stack (Back, Forward, Reload, Home)
+ * - Browser address / search bar with URL detection
+ * - Category filter chips
+ * - Player dock minimization & Mini-player expand/collapse
+ * - Bottom navigation tab switching
+ * - Favorites and playback history
  */
 
-// Curated high-quality audio streams & videos known to support embedding
+// Curated high-quality video/audio streams across categories
 const CURATED_FEEDS = [
   {
     id: 'jfKfPfyJRdk',
     title: 'Lofi Girl - Relaxing Beats to Study/Chill to',
     channel: 'Lofi Girl',
-    category: 'Music',
+    category: 'Lofi',
+    tags: ['lofi', 'beats', 'study', 'relax', 'chill', 'music'],
     thumbnail: 'https://img.youtube.com/vi/jfKfPfyJRdk/hqdefault.jpg'
   },
   {
@@ -17,13 +24,15 @@ const CURATED_FEEDS = [
     title: 'Synthwave Radio - Chill synth / retro beats',
     channel: 'Lofi Girl Synthwave',
     category: 'Music',
+    tags: ['synthwave', 'retro', 'synth', 'chill', 'beats', 'music'],
     thumbnail: 'https://img.youtube.com/vi/4xDzrJKXOOY/hqdefault.jpg'
   },
   {
     id: '5qap5aO4i9A',
     title: 'Lofi Hip Hop Radio - Beats to Sleep/Chill to',
     channel: 'ChilledCow',
-    category: 'Chill',
+    category: 'Lofi',
+    tags: ['lofi', 'sleep', 'beats', 'chill', 'music'],
     thumbnail: 'https://img.youtube.com/vi/5qap5aO4i9A/hqdefault.jpg'
   },
   {
@@ -31,21 +40,48 @@ const CURATED_FEEDS = [
     title: 'Coffee Shop Ambience & Smooth Bossa Nova Jazz',
     channel: 'Coffee Music Hub',
     category: 'Ambience',
+    tags: ['coffee', 'ambience', 'jazz', 'bossa nova', 'relax'],
     thumbnail: 'https://img.youtube.com/vi/1fueZCTYkpA/hqdefault.jpg'
   },
   {
     id: 'DWcJFNfaw9c',
-    title: 'Relaxing Piano Music for Stress Relief',
+    title: 'Relaxing Piano Music for Stress Relief & Meditation',
     channel: 'Relax Music Therapy',
     category: 'Focus',
+    tags: ['piano', 'focus', 'stress relief', 'meditation', 'instrumental'],
     thumbnail: 'https://img.youtube.com/vi/DWcJFNfaw9c/hqdefault.jpg'
+  },
+  {
+    id: 'e3L1I8squx4',
+    title: 'Rain Sounds with Gentle Thunder for Sleep & Relaxation',
+    channel: 'Relaxing Ambience',
+    category: 'Ambience',
+    tags: ['rain', 'thunder', 'sleep', 'white noise', 'ambience'],
+    thumbnail: 'https://img.youtube.com/vi/e3L1I8squx4/hqdefault.jpg'
+  },
+  {
+    id: 'lTRiuFIWV54',
+    title: 'Deep Focus & Brain Power Alpha Waves Study Music',
+    channel: 'Study Session',
+    category: 'Focus',
+    tags: ['study', 'focus', 'brain', 'alpha waves', 'work'],
+    thumbnail: 'https://img.youtube.com/vi/lTRiuFIWV54/hqdefault.jpg'
   },
   {
     id: 'dQw4w9WgXcQ',
     title: 'Rick Astley - Never Gonna Give You Up (Official Music Video)',
     channel: 'Rick Astley',
-    category: 'Classic',
+    category: 'Music',
+    tags: ['rick astley', 'pop', 'music', 'classic', '80s'],
     thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg'
+  },
+  {
+    id: '2MIdr8t1Jbg',
+    title: 'Optimize Focus & Concentration - Neuroscience Podcast',
+    channel: 'Science & Health Talks',
+    category: 'Podcasts',
+    tags: ['podcast', 'focus', 'neuroscience', 'productivity', 'health'],
+    thumbnail: 'https://img.youtube.com/vi/2MIdr8t1Jbg/hqdefault.jpg'
   }
 ];
 
@@ -53,44 +89,85 @@ class WebAppController {
   constructor() {
     this.history = this.loadStorage('yt_adfree_history') || [];
     this.favorites = this.loadStorage('yt_adfree_favorites') || [];
+    this.currentCategory = 'All';
     this.currentPlaylist = [...CURATED_FEEDS];
     this.currentIndex = 0;
 
+    // In-App Browser Navigation History Stack
+    this.browserHistory = [];
+    this.browserHistoryIndex = -1;
+    this.currentView = 'home';
+    this.isPlayerMinimized = false;
+
     this.initUI();
+    this.initBrowserHistory();
     this.renderFeeds();
     this.renderFavorites();
   }
 
+  /* =========================================================================
+     1. UI INITIALIZATION & EVENT LISTENERS
+     ========================================================================= */
   initUI() {
-    // URL or Search form
-    const form = document.getElementById('search-form');
-    const input = document.getElementById('input-url');
+    // 1. Browser Navigation Buttons
+    const btnBack = document.getElementById('btn-browser-back');
+    const btnForward = document.getElementById('btn-browser-forward');
+    const btnReload = document.getElementById('btn-browser-reload');
+    const btnHome = document.getElementById('btn-browser-home');
 
-    if (form) {
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const query = input.value.trim();
-        if (!query) return;
+    if (btnBack) btnBack.addEventListener('click', () => this.goBack());
+    if (btnForward) btnForward.addEventListener('click', () => this.goForward());
+    if (btnReload) btnReload.addEventListener('click', () => this.reloadCurrent());
+    if (btnHome) btnHome.addEventListener('click', () => this.goHome());
 
-        // Check if it's a URL or ID
-        const videoId = window.playerManager.extractVideoId(query);
-        if (videoId) {
-          const videoInfo = {
-            id: videoId,
-            title: `Video (${videoId})`,
-            channel: 'YouTube',
-            thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
-          };
-          this.playVideo(videoInfo);
-          input.value = '';
-        } else {
-          // Fallback search link
-          window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank');
-        }
+    // 2. Address / Search Bar Form
+    const addressForm = document.getElementById('browser-address-form');
+    const addressInput = document.getElementById('browser-address-input');
+    const btnClearAddress = document.getElementById('btn-clear-address');
+
+    if (addressInput && btnClearAddress) {
+      addressInput.addEventListener('input', () => {
+        btnClearAddress.style.display = addressInput.value.length > 0 ? 'block' : 'none';
+      });
+
+      btnClearAddress.addEventListener('click', () => {
+        addressInput.value = '';
+        btnClearAddress.style.display = 'none';
+        addressInput.focus();
       });
     }
 
-    // Scrubber interaction
+    if (addressForm && addressInput) {
+      addressForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const query = addressInput.value.trim();
+        if (!query) return;
+
+        this.handleAddressSubmission(query);
+      });
+    }
+
+    // 3. Category Filter Chips
+    const chips = document.querySelectorAll('.category-scroll .chip');
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        chips.forEach((c) => c.classList.remove('active'));
+        chip.classList.add('active');
+        this.currentCategory = chip.dataset.category || 'All';
+        this.renderFeeds();
+        if (this.currentView !== 'home') {
+          this.switchView('home');
+        }
+        this.pushHistoryState({
+          type: 'browse',
+          view: 'home',
+          category: this.currentCategory,
+          url: this.currentCategory === 'All' ? 'https://m.youtube.com' : `https://m.youtube.com/category/${this.currentCategory.toLowerCase()}`
+        });
+      });
+    });
+
+    // 4. Scrubber Range Slider
     const scrubber = document.getElementById('player-scrubber');
     if (scrubber) {
       scrubber.addEventListener('change', (e) => {
@@ -102,9 +179,9 @@ class WebAppController {
       });
     }
 
-    // Floating Back Button
-    const backBtn = document.getElementById('floating-back-btn');
-    if (backBtn) {
+    // 5. Floating Go Back Button (Bottom Right)
+    const floatingBackBtn = document.getElementById('floating-back-btn');
+    if (floatingBackBtn) {
       let pressTimer = null;
       let isLong = false;
 
@@ -112,45 +189,41 @@ class WebAppController {
         isLong = false;
         pressTimer = setTimeout(() => {
           isLong = true;
-          backBtn.style.transform = 'scale(1.2)';
-          setTimeout(() => window.location.reload(), 150);
+          floatingBackBtn.style.transform = 'scale(1.2)';
+          setTimeout(() => this.reloadCurrent(), 150);
         }, 600);
       };
 
-      const end = (e) => {
+      const end = () => {
         clearTimeout(pressTimer);
-        backBtn.style.transform = '';
+        floatingBackBtn.style.transform = '';
         if (!isLong) {
-          if (window.history.length > 1) {
-            window.history.back();
-          } else {
-            this.switchView('home');
-          }
+          this.goBack();
         }
       };
 
-      backBtn.addEventListener('touchstart', start, { passive: true });
-      backBtn.addEventListener('touchend', end);
-      backBtn.addEventListener('mousedown', start);
-      backBtn.addEventListener('mouseup', end);
+      floatingBackBtn.addEventListener('touchstart', start, { passive: true });
+      floatingBackBtn.addEventListener('touchend', end);
+      floatingBackBtn.addEventListener('mousedown', start);
+      floatingBackBtn.addEventListener('mouseup', end);
     }
 
-    // Bottom Navigation Tabs
-    const navButtons = document.querySelectorAll('.nav-tab-btn');
+    // 6. Bottom Navigation Tabs
+    const navButtons = document.querySelectorAll('.bottom-nav .nav-tab-btn');
     navButtons.forEach((btn) => {
       btn.addEventListener('click', () => {
         const view = btn.dataset.view;
-        this.switchView(view);
+        this.navigateToTab(view);
       });
     });
 
-    // Favorite Button toggle
+    // 7. Favorite Button toggle
     const favBtn = document.getElementById('btn-favorite');
     if (favBtn) {
       favBtn.addEventListener('click', () => this.toggleFavoriteCurrentVideo());
     }
 
-    // Audio-only mode button
+    // 8. Audio-only mode button
     const audioBtn = document.getElementById('btn-audio-only');
     if (audioBtn) {
       audioBtn.addEventListener('click', () => {
@@ -159,12 +232,229 @@ class WebAppController {
     }
   }
 
+  /* =========================================================================
+     2. IN-APP BROWSER NAVIGATION & HISTORY SYSTEM
+     ========================================================================= */
+  initBrowserHistory() {
+    const initialState = {
+      type: 'browse',
+      view: 'home',
+      category: 'All',
+      url: 'https://m.youtube.com'
+    };
+    this.browserHistory = [initialState];
+    this.browserHistoryIndex = 0;
+    this.updateAddressBar(initialState.url);
+    this.updateBrowserNavButtons();
+  }
+
+  pushHistoryState(state) {
+    // If not at the end of history, discard forward stack
+    if (this.browserHistoryIndex < this.browserHistory.length - 1) {
+      this.browserHistory = this.browserHistory.slice(0, this.browserHistoryIndex + 1);
+    }
+    this.browserHistory.push(state);
+    this.browserHistoryIndex = this.browserHistory.length - 1;
+    this.updateAddressBar(state.url);
+    this.updateBrowserNavButtons();
+  }
+
+  goBack() {
+    if (this.browserHistoryIndex > 0) {
+      this.browserHistoryIndex--;
+      this.restoreBrowserState(this.browserHistory[this.browserHistoryIndex]);
+      this.updateBrowserNavButtons();
+    } else if (this.currentView !== 'home') {
+      this.goHome();
+    }
+  }
+
+  goForward() {
+    if (this.browserHistoryIndex < this.browserHistory.length - 1) {
+      this.browserHistoryIndex++;
+      this.restoreBrowserState(this.browserHistory[this.browserHistoryIndex]);
+      this.updateBrowserNavButtons();
+    }
+  }
+
+  reloadCurrent() {
+    const current = this.browserHistory[this.browserHistoryIndex];
+    if (!current) return;
+
+    if (current.type === 'video' && window.playerManager) {
+      window.playerManager.seekTo(0);
+      window.playerManager.play();
+    } else {
+      this.restoreBrowserState(current);
+    }
+  }
+
+  goHome() {
+    this.currentCategory = 'All';
+    const chips = document.querySelectorAll('.category-scroll .chip');
+    chips.forEach((c) => c.classList.toggle('active', c.dataset.category === 'All'));
+    this.renderFeeds();
+    this.switchView('home');
+
+    this.pushHistoryState({
+      type: 'browse',
+      view: 'home',
+      category: 'All',
+      url: 'https://m.youtube.com'
+    });
+  }
+
+  restoreBrowserState(state) {
+    if (!state) return;
+    this.updateAddressBar(state.url);
+
+    if (state.type === 'browse') {
+      this.currentCategory = state.category || 'All';
+      const chips = document.querySelectorAll('.category-scroll .chip');
+      chips.forEach((c) => c.classList.toggle('active', c.dataset.category === this.currentCategory));
+      this.renderFeeds();
+      this.switchView('home');
+    } else if (state.type === 'search') {
+      this.performSearch(state.query, false);
+    } else if (state.type === 'library') {
+      this.switchView('library');
+    } else if (state.type === 'video') {
+      this.playVideo(state.videoInfo, false);
+    }
+  }
+
+  updateBrowserNavButtons() {
+    const btnBack = document.getElementById('btn-browser-back');
+    const btnForward = document.getElementById('btn-browser-forward');
+
+    if (btnBack) {
+      btnBack.disabled = this.browserHistoryIndex <= 0 && this.currentView === 'home';
+    }
+    if (btnForward) {
+      btnForward.disabled = this.browserHistoryIndex >= this.browserHistory.length - 1;
+    }
+  }
+
+  updateAddressBar(url) {
+    const addressInput = document.getElementById('browser-address-input');
+    const btnClearAddress = document.getElementById('btn-clear-address');
+    if (addressInput) {
+      addressInput.value = url;
+      if (btnClearAddress) {
+        btnClearAddress.style.display = url ? 'block' : 'none';
+      }
+    }
+  }
+
+  /* =========================================================================
+     3. ADDRESS BAR SUBMISSION & IN-APP SEARCH
+     ========================================================================= */
+  handleAddressSubmission(input) {
+    const videoId = window.playerManager.extractVideoId(input);
+
+    if (videoId) {
+      // Direct YouTube Video URL or ID
+      const videoInfo = {
+        id: videoId,
+        title: `YouTube Video (${videoId})`,
+        channel: 'YouTube Stream',
+        thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+        category: 'Custom'
+      };
+      this.playVideo(videoInfo, true);
+    } else {
+      // Perform In-App Search for query
+      this.performSearch(input, true);
+    }
+  }
+
+  performSearch(query, shouldPushHistory = true) {
+    const cleanQuery = query.trim().toLowerCase();
+    this.switchView('search');
+
+    const searchTitleEl = document.getElementById('search-query-title');
+    const searchCountEl = document.getElementById('search-result-count');
+    const container = document.getElementById('search-results-container');
+
+    if (searchTitleEl) searchTitleEl.textContent = `Results for "${query}"`;
+
+    // Filter curated feeds by search terms
+    let results = CURATED_FEEDS.filter((item) => {
+      const matchTitle = item.title.toLowerCase().includes(cleanQuery);
+      const matchChannel = item.channel.toLowerCase().includes(cleanQuery);
+      const matchCategory = item.category.toLowerCase().includes(cleanQuery);
+      const matchTags = item.tags && item.tags.some((t) => t.includes(cleanQuery));
+      return matchTitle || matchChannel || matchCategory || matchTags;
+    });
+
+    // If no direct keyword matches, provide curated results plus fallback search card
+    if (results.length === 0) {
+      results = CURATED_FEEDS.slice(0, 4);
+    }
+
+    if (searchCountEl) {
+      searchCountEl.textContent = `${results.length} video${results.length === 1 ? '' : 's'}`;
+    }
+
+    if (container) {
+      container.innerHTML = results
+        .map(
+          (item) => `
+        <div class="video-card" onclick='window.app.playVideo(${JSON.stringify(item)})'>
+          <div class="thumbnail-wrapper">
+            <img src="${item.thumbnail}" alt="${item.title}" loading="lazy" />
+            <span class="badge-category">${item.category}</span>
+            <div class="play-overlay">
+              <svg viewBox="0 0 24 24" width="36" height="36" fill="#ffffff"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+          </div>
+          <div class="card-details">
+            <h4 class="card-title">${item.title}</h4>
+            <p class="card-channel">${item.channel}</p>
+          </div>
+        </div>
+      `
+        )
+        .join('');
+    }
+
+    const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+    if (shouldPushHistory) {
+      this.pushHistoryState({
+        type: 'search',
+        view: 'search',
+        query: query,
+        url: searchUrl
+      });
+    } else {
+      this.updateAddressBar(searchUrl);
+    }
+  }
+
+  /* =========================================================================
+     4. VIEW & TAB SWITCHING
+     ========================================================================= */
+  navigateToTab(viewName) {
+    this.switchView(viewName);
+
+    let tabUrl = 'https://m.youtube.com';
+    if (viewName === 'search') tabUrl = 'https://m.youtube.com/search';
+    if (viewName === 'library') tabUrl = 'https://m.youtube.com/library';
+
+    this.pushHistoryState({
+      type: viewName === 'home' ? 'browse' : viewName,
+      view: viewName,
+      url: tabUrl
+    });
+  }
+
   switchView(viewName) {
-    document.querySelectorAll('.app-view').forEach((el) => el.classList.remove('active'));
-    document.querySelectorAll('.nav-tab-btn').forEach((btn) => btn.classList.remove('active'));
+    this.currentView = viewName;
+    document.querySelectorAll('.browser-tab-view').forEach((el) => el.classList.remove('active'));
+    document.querySelectorAll('.bottom-nav .nav-tab-btn').forEach((btn) => btn.classList.remove('active'));
 
     const targetView = document.getElementById(`view-${viewName}`);
-    const targetNav = document.querySelector(`.nav-tab-btn[data-view="${viewName}"]`);
+    const targetNav = document.querySelector(`.bottom-nav .nav-tab-btn[data-view="${viewName}"]`);
 
     if (targetView) targetView.classList.add('active');
     if (targetNav) targetNav.classList.add('active');
@@ -175,36 +465,97 @@ class WebAppController {
     }
   }
 
-  playVideo(videoInfo) {
+  /* =========================================================================
+     5. VIDEO PLAYBACK & MINI-PLAYER CONTROLS
+     ========================================================================= */
+  playVideo(videoInfo, shouldPushHistory = true) {
+    // If player was minimized, expand it
+    this.expandPlayer();
+
     window.playerManager.loadVideo(videoInfo.id, videoInfo);
 
-    // Save to history
+    // Save to playback history
     this.addToHistory(videoInfo);
 
     // Update favorite button state
     this.updateFavButtonState(videoInfo.id);
 
-    // Scroll to player smoothly
+    const videoUrl = `https://www.youtube.com/watch?v=${videoInfo.id}`;
+    if (shouldPushHistory) {
+      this.pushHistoryState({
+        type: 'video',
+        videoInfo: videoInfo,
+        url: videoUrl
+      });
+    } else {
+      this.updateAddressBar(videoUrl);
+    }
+
+    // Scroll player into view smoothly
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  minimizePlayer() {
+    this.isPlayerMinimized = true;
+    const playerDock = document.getElementById('player-dock');
+    const miniBar = document.getElementById('mini-player-bar');
+
+    if (playerDock) playerDock.style.display = 'none';
+    if (miniBar) miniBar.style.display = 'flex';
+  }
+
+  expandPlayer() {
+    this.isPlayerMinimized = false;
+    const playerDock = document.getElementById('player-dock');
+    const miniBar = document.getElementById('mini-player-bar');
+
+    if (playerDock) {
+      playerDock.style.display = 'block';
+      playerDock.classList.add('active');
+    }
+    if (miniBar) miniBar.style.display = 'none';
+  }
+
+  closePlayer() {
+    this.isPlayerMinimized = false;
+    window.playerManager.pause();
+
+    const playerDock = document.getElementById('player-dock');
+    const miniBar = document.getElementById('mini-player-bar');
+
+    if (playerDock) {
+      playerDock.style.display = 'none';
+      playerDock.classList.remove('active');
+    }
+    if (miniBar) miniBar.style.display = 'none';
   }
 
   playNextTrack() {
     this.currentIndex = (this.currentIndex + 1) % this.currentPlaylist.length;
-    this.playVideo(this.currentPlaylist[this.currentIndex]);
+    this.playVideo(this.currentPlaylist[this.currentIndex], true);
   }
 
   playPrevTrack() {
     this.currentIndex = (this.currentIndex - 1 + this.currentPlaylist.length) % this.currentPlaylist.length;
-    this.playVideo(this.currentPlaylist[this.currentIndex]);
+    this.playVideo(this.currentPlaylist[this.currentIndex], true);
   }
 
+  /* =========================================================================
+     6. FEEDS RENDERING
+     ========================================================================= */
   renderFeeds() {
     const grid = document.getElementById('feeds-grid');
     if (!grid) return;
 
-    grid.innerHTML = CURATED_FEEDS.map(
-      (item, idx) => `
-      <div class="video-card" onclick="window.app.selectFeedItem(${idx})">
+    let items = CURATED_FEEDS;
+    if (this.currentCategory !== 'All') {
+      items = CURATED_FEEDS.filter((f) => f.category === this.currentCategory);
+    }
+
+    grid.innerHTML = items
+      .map(
+        (item) => `
+      <div class="video-card" onclick='window.app.playVideo(${JSON.stringify(item)})'>
         <div class="thumbnail-wrapper">
           <img src="${item.thumbnail}" alt="${item.title}" loading="lazy" />
           <span class="badge-category">${item.category}</span>
@@ -218,14 +569,13 @@ class WebAppController {
         </div>
       </div>
     `
-    ).join('');
+      )
+      .join('');
   }
 
-  selectFeedItem(index) {
-    this.currentIndex = index;
-    this.playVideo(CURATED_FEEDS[index]);
-  }
-
+  /* =========================================================================
+     7. FAVORITES & PLAYBACK HISTORY
+     ========================================================================= */
   toggleFavoriteCurrentVideo() {
     const current = window.playerManager.currentVideoInfo;
     if (!current) return;

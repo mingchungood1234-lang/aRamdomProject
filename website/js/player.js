@@ -240,9 +240,9 @@ class YouTubePlayerManager {
 
     const titleEl = document.getElementById('current-video-title');
     const channelEl = document.getElementById('current-video-channel');
-    const miniTitleEl = document.getElementById('mini-title');
-    const miniChannelEl = document.getElementById('mini-channel');
-    const miniThumbEl = document.getElementById('mini-thumb');
+    const miniTitleEl = document.getElementById('mini-player-title');
+    const miniChannelEl = document.getElementById('mini-player-channel');
+    const miniThumbEl = document.getElementById('mini-player-thumb');
 
     if (titleEl) titleEl.textContent = this.currentVideoInfo.title;
     if (channelEl) channelEl.textContent = this.currentVideoInfo.channel;
@@ -251,8 +251,8 @@ class YouTubePlayerManager {
     if (miniThumbEl) miniThumbEl.src = this.currentVideoInfo.thumbnail;
 
     // Show player wrapper
-    const playerSection = document.getElementById('player-section');
-    if (playerSection) playerSection.classList.add('active');
+    const playerDock = document.getElementById('player-dock');
+    if (playerDock) playerDock.classList.add('active');
   }
 
   updatePlayButtonIcon(isPlaying) {
@@ -318,3 +318,4 @@ class YouTubePlayerManager {
 }
 
 window.playerManager = new YouTubePlayerManager();
+
